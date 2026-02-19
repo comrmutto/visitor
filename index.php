@@ -102,28 +102,16 @@ if ($email_result) {
             <div class="form-row">
                 <div class="form-group">
                     <label class="static-label"><span data-i18n="start_time">เวลาเริ่มเข้าเยี่ยม</span> <span class="required">*</span></label>
-                    <input type="datetime-local" id="visit_start_datetime" name="visit_start_datetime" required onchange="updateMeetingDate(); updatePeriodFromTime();">
+                    <input type="datetime-local" id="visit_start_datetime" name="visit_start_datetime" required onchange="validateDates(); updateMeetingDate();">
                 </div>
 
                 <div class="form-group">
                     <label class="static-label"><span data-i18n="end_time">เวลาสิ้นสุดเข้าเยี่ยม</span> <span class="required">*</span></label>
-                    <input type="datetime-local" id="visit_end_datetime" name="visit_end_datetime" required onchange="updatePeriodFromTime();">
+                    <input type="datetime-local" id="visit_end_datetime" name="visit_end_datetime" required onchange="validateDates();">
                 </div>
             </div>
             
             <div class="form-row">
-                <div class="form-group">
-                    <label class="static-label" data-i18n="period">ช่วงเวลา</label>
-                    <div class="select-wrapper">
-                        <select id="visit_period" name="visit_period" onchange="updateTimeFromPeriod()">
-                            <option value="" data-i18n="select_period">เลือกช่วงเวลา</option>
-                            <option value="morning" data-i18n="morning">เช้า (08:00-12:00)</option>
-                            <option value="afternoon" data-i18n="afternoon">บ่าย (13:00-17:00)</option>
-                            <option value="full_day" data-i18n="full_day">เต็มวัน (08:00-17:00)</option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="form-group">
                     <label class="static-label" data-i18n="visitor_type">ประเภทผู้มาติดต่อ</label>
                     <div class="select-wrapper">
@@ -157,6 +145,26 @@ if ($email_result) {
 
             <div class="form-row">
                 <div class="form-group switch-group">
+                    <label for="coffee_snack" data-i18n="need_coffee">ต้องการกาแฟ-น้ำดื่ม?</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="coffee_snack_check" onchange="document.getElementById('coffee_snack').value = this.checked ? '1' : '0'">
+                        <label for="coffee_snack_check" class="slider"></label>
+                        <input type="hidden" id="coffee_snack" name="coffee_snack" value="0">
+                    </div>
+                </div>
+
+                <div class="form-group switch-group">
+                    <label for="lunch" data-i18n="need_lunch">ต้องการอาหารกลางวัน?</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="lunch_check" onchange="document.getElementById('lunch').value = this.checked ? '1' : '0'">
+                        <label for="lunch_check" class="slider"></label>
+                        <input type="hidden" id="lunch" name="lunch" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group switch-group">
                     <label for="meeting_room" data-i18n="need_meeting">ต้องการจองห้องประชุม?</label>
                     <div class="toggle-switch">
                         <input type="checkbox" id="meeting_room_check" onchange="document.getElementById('meeting_room').value = this.checked ? '1' : '0'; toggleMeetingFields();">
@@ -172,26 +180,26 @@ if ($email_result) {
             
         <div class="form-group">
             <label class="static-label" data-i18n="meeting_date">วันที่จองห้องประชุม <span class="required">*</span></label>
-            <input type="date" id="meeting_date" name="meeting_date" class="meeting-field" required>
+            <input type="date" id="meeting_date" name="meeting_date" class="meeting-field">
             <small class="field-note">* วันที่เริ่มต้นดึงจากวันที่เริ่มเข้าเยี่ยมอัตโนมัติ แต่สามารถแก้ไขได้</small>
         </div>
             
             <div class="form-row">
                 <div class="form-group">
                     <label class="static-label"><span data-i18n="meeting_start">เริ่มประชุม</span> <span class="required">*</span></label>
-                    <input type="time" id="meeting_start" name="meeting_start" class="meeting-field" required>
+                    <input type="time" id="meeting_start" name="meeting_start" class="meeting-field">
                 </div>
 
                 <div class="form-group">
                     <label class="static-label"><span data-i18n="meeting_end">สิ้นสุดประชุม</span> <span class="required">*</span></label>
-                    <input type="time" id="meeting_end" name="meeting_end" class="meeting-field" required>
+                    <input type="time" id="meeting_end" name="meeting_end" class="meeting-field">
                 </div>
             </div>
 
             <div class="form-group">
                 <label class="static-label"><span data-i18n="select_room">เลือกห้องประชุม</span> <span class="required">*</span></label>
                 <div class="select-wrapper">
-                    <select id="meeting_room_select" name="meeting_room_select" class="meeting-field" required>
+                    <select id="meeting_room_select" name="meeting_room_select" class="meeting-field">
                         <option value="" data-i18n="select_room_ph">เลือกห้องประชุม</option>
                         <option value="Meeting Room 1">Meeting Room 1</option>
                         <option value="Meeting Room 2">Meeting Room 2</option>
@@ -201,15 +209,30 @@ if ($email_result) {
                 </div>
             </div>
             
+            <!-- ช่องเลือกอีเมลผู้รับ (Required) -->
+            <div class="form-group">
+                <label class="static-label" data-i18n="required_email">อีเมลผู้รับ <span class="required">*</span></label>
+                <div class="email-selector">
+                    <div class="email-search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="requiredEmailSearch" class="email-search-input" placeholder="ค้นหาชื่อหรืออีเมล..." data-i18n-placeholder="search_ph">
+                        <div id="requiredEmailSearchResults" class="search-results"></div>
+                    </div>
+                    <div class="selected-emails" id="selectedRequiredEmails"></div>
+                </div>
+                <small class="field-note">* กรุณาเลือกอีเมลผู้รับอย่างน้อย 1 ท่าน</small>
+            </div>
+
+            <!-- ช่องเลือกอีเมลผู้รับสำเนา (CC) -->
             <div class="form-group">
                 <label class="static-label" data-i18n="cc_email">อีเมลผู้รับสำเนา</label>
                 <div class="email-selector">
                      <div class="email-search-container">
                         <i class="fas fa-search search-icon"></i>
-                        <input type="text" id="emailSearch" class="email-search-input" placeholder="ค้นหาชื่อหรืออีเมล..." data-i18n-placeholder="search_ph">
-                        <div id="emailSearchResults" class="search-results"></div>
+                        <input type="text" id="ccEmailSearch" class="email-search-input" placeholder="ค้นหาชื่อหรืออีเมล..." data-i18n-placeholder="search_ph">
+                        <div id="ccEmailSearchResults" class="search-results"></div>
                     </div>
-                    <div class="selected-emails" id="selectedEmails"></div>
+                    <div class="selected-emails" id="selectedCCEmails"></div>
                 </div>
             </div>
         </div>
@@ -227,93 +250,49 @@ if ($email_result) {
 </div>
     <script src="script.js"></script>
     <script>
-        // ฟังก์ชันตั้งค่าวันที่เริ่มต้นเป็นวันนี้ เวลา 08:00 และ 17:30
-        function setDefaultDateTime() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            
-            // ตั้งค่าเริ่มต้น: 08:00 น.
-            const startDateTime = `${year}-${month}-${day}T08:00`;
-            document.getElementById('visit_start_datetime').value = startDateTime;
-            
-            // ตั้งค่าสิ้นสุด: 17:30 น.
-            const endDateTime = `${year}-${month}-${day}T17:30`;
-            document.getElementById('visit_end_datetime').value = endDateTime;
-            
-            // อัปเดตวันที่จองห้องประชุม
-            updateMeetingDate();
+// ฟังก์ชันตั้งค่าวันที่เริ่มต้นเป็นวันนี้
+function setDefaultDateTime() {
+    const today = new Date();
+    const endTime = new Date(today);
+    endTime.setHours(endTime.getHours() + 1); // เพิ่ม 1 ชั่วโมง
+    
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const hours = String(today.getHours()).padStart(2, '0');
+    const minutes = String(today.getMinutes()).padStart(2, '0');
+    const endHours = String(endTime.getHours()).padStart(2, '0');
+    
+    // ตั้งค่าเริ่มต้น
+    const startDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    document.getElementById('visit_start_datetime').value = startDateTime;
+    
+    const endDateTime = `${year}-${month}-${day}T${endHours}:${minutes}`;
+    document.getElementById('visit_end_datetime').value = endDateTime;
+    
+    // อัปเดตวันที่จองห้องประชุม
+    updateMeetingDate();
+}
+// ฟังก์ชันตรวจสอบวันที่ (เพิ่มใน inline script ด้วย)
+function validateDates() {
+    const startDate = document.getElementById('visit_start_datetime');
+    const endDate = document.getElementById('visit_end_datetime');
+    
+    if (startDate.value && endDate.value) {
+        // เปรียบเทียบ string โดยตรง (YYYY-MM-DDTHH:MM) แทน new Date()
+        // แก้ปัญหา Chrome parse datetime ผิดเมื่อชั่วโมงเป็น 10, 11, 12
+        if (startDate.value > endDate.value) {
+            alert('วันที่สิ้นสุดต้องมากกว่าหรือเท่ากับวันที่เริ่ม');
+            endDate.value = startDate.value;
         }
-
-        // ฟังก์ชันอัปเดตช่วงเวลาตามเวลาที่เลือก
-        function updatePeriodFromTime() {
-            const startTime = document.getElementById('visit_start_datetime').value;
-            const endTime = document.getElementById('visit_end_datetime').value;
-            const periodSelect = document.getElementById('visit_period');
-            
-            if (startTime && endTime) {
-                const startHour = parseInt(startTime.split('T')[1].split(':')[0]);
-                const startMin = parseInt(startTime.split('T')[1].split(':')[1]);
-                const endHour = parseInt(endTime.split('T')[1].split(':')[0]);
-                const endMin = parseInt(endTime.split('T')[1].split(':')[1]);
-                
-                // เช้า (08:00-12:00)
-                if (startHour === 8 && startMin === 0 && endHour === 12 && endMin === 0) {
-                    periodSelect.value = 'morning';
-                }
-                // บ่าย (13:00-17:00)
-                else if (startHour === 13 && startMin === 0 && endHour === 17 && endMin === 0) {
-                    periodSelect.value = 'afternoon';
-                }
-                // เต็มวัน (08:00-17:00)
-                else if (startHour === 8 && startMin === 0 && endHour === 17 && endMin === 0) {
-                    periodSelect.value = 'full_day';
-                }
-                else {
-                    periodSelect.value = '';
-                }
-            }
-        }
-
-        // ฟังก์ชันอัปเดตเวลาตามช่วงเวลาที่เลือก
-        function updateTimeFromPeriod() {
-            const period = document.getElementById('visit_period').value;
-            const startDate = document.getElementById('visit_start_datetime');
-            const endDate = document.getElementById('visit_end_datetime');
-            
-            if (!startDate.value || !endDate.value) return;
-            
-            const datePart = startDate.value.split('T')[0]; // ดึงวันที่
-            
-            switch(period) {
-                case 'morning':
-                    startDate.value = datePart + 'T08:00';
-                    endDate.value = datePart + 'T12:00';
-                    break;
-                case 'afternoon':
-                    startDate.value = datePart + 'T13:00';
-                    endDate.value = datePart + 'T17:00';
-                    break;
-                case 'full_day':
-                    startDate.value = datePart + 'T08:00';
-                    endDate.value = datePart + 'T17:00';
-                    break;
-                default:
-                    // ถ้าเลือกค่าว่าง ไม่ต้องเปลี่ยนแปลง
-                    break;
-            }
-            
-            // อัปเดตวันที่จองห้องประชุม
-            updateMeetingDate();
-        }
-
+    }
+    updateMeetingDate();
+}
         // ฟังก์ชันอัปเดตวันที่จองห้องประชุม
         function updateMeetingDate() {
             const visitStart = document.getElementById('visit_start_datetime').value;
             const meetingDate = document.getElementById('meeting_date');
             
-            // ลบ !meetingDate.value ออก เพื่อให้มันอัปเดตค่าใหม่ทับเสมอ
             if (visitStart && meetingDate) {
                 const datePart = visitStart.split('T')[0];
                 meetingDate.value = datePart;
@@ -329,19 +308,16 @@ if ($email_result) {
         function toggleMeetingFields() {
            const isChecked = document.getElementById('meeting_room_check').checked;
            const section = document.getElementById('meetingSection');
-           const inputs = section.querySelectorAll('input, select');
+           // เลือกเฉพาะ field จริง ไม่รวม search input ที่ไม่ได้ส่ง form
+           const realFields = section.querySelectorAll('#meeting_date, #meeting_start, #meeting_end, #meeting_room_select');
            
            if (isChecked) {
                section.style.display = 'block';
                section.style.opacity = '0';
                setTimeout(() => section.style.opacity = '1', 10);
                
-               // กำหนด required เฉพาะฟิลด์ที่จำเป็น
-               inputs.forEach(input => {
-                   if(input.id !== 'emailSearch') {
-                       input.setAttribute('required', 'required');
-                   }
-               });
+               // กำหนด required เฉพาะ field จริง เท่านั้น (ห้ามใส่ search input)
+               realFields.forEach(field => field.setAttribute('required', 'required'));
                
                // ตั้งค่าวันที่เริ่มต้นให้ meeting_date (ถ้ายังไม่มีค่า)
                const visitStart = document.getElementById('visit_start_datetime').value;
@@ -352,7 +328,7 @@ if ($email_result) {
                }
            } else {
                section.style.display = 'none';
-               inputs.forEach(input => input.removeAttribute('required'));
+               realFields.forEach(field => field.removeAttribute('required'));
            }
         }
         

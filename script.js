@@ -1,5 +1,6 @@
 // ตัวแปร global
-let selectedEmailList = [];
+let selectedRequiredEmailList = [];
+let selectedCCEmailList = [];
 let searchTimeout;
 let isSubmitting = false; // ป้องกันการ submit ซ้ำ
 
@@ -21,6 +22,8 @@ const translations = {
         visitor_type: "ประเภทผู้มาติดต่อ",
         need_welcome: "ต้องการ Welcome Board?",
         need_tour: "ต้องการเยี่ยมชมโรงงาน?",
+        need_coffee: "ต้องการกาแฟ-น้ำดื่ม?",
+        need_lunch: "ต้องการอาหารกลางวัน?",
         need_meeting: "ต้องการจองห้องประชุม?",
         section_meeting: "รายละเอียดการจอง",
         meeting_date: "วันที่จองห้องประชุม",
@@ -28,6 +31,7 @@ const translations = {
         meeting_end: "สิ้นสุดประชุม",
         select_room: "เลือกห้องประชุม",
         select_room_ph: "เลือกห้องประชุม",
+        required_email: "อีเมลผู้รับ",
         cc_email: "อีเมลผู้รับสำเนา",
         search_ph: "ค้นหาชื่อหรืออีเมล...",
         btn_submit: "ยืนยันข้อมูล",
@@ -37,6 +41,7 @@ const translations = {
         alert_date_invalid: "วันที่สิ้นสุดต้องมากกว่าหรือเท่ากับวันที่เริ่ม",
         alert_meeting_time_req: "กรุณากรอกเวลาประชุม",
         alert_meeting_time_invalid: "เวลาเริ่มประชุมต้องน้อยกว่าเวลาสิ้นสุดประชุม",
+        alert_required_email: "กรุณาเลือกอีเมลผู้รับอย่างน้อย 1 ท่าน",
         btn_saving: "กำลังบันทึก...",
         error_prefix: "เกิดข้อผิดพลาด: ",
         confirm_success: "บันทึกข้อมูลเรียบร้อยแล้ว"
@@ -57,6 +62,8 @@ const translations = {
         visitor_type: "Visitor Type",
         need_welcome: "Require Welcome Board?",
         need_tour: "Require Factory Tour?",
+        need_coffee: "Need Coffee & Drinks?",
+        need_lunch: "Need Lunch?",
         need_meeting: "Book Meeting Room?",
         section_meeting: "Booking Details",
         meeting_date: "Meeting Date",
@@ -64,6 +71,7 @@ const translations = {
         meeting_end: "End Time",
         select_room: "Select Room",
         select_room_ph: "Select Room",
+        required_email: "Required Email Recipients",
         cc_email: "CC Email Recipients",
         search_ph: "Type to search name or email...",
         btn_submit: "Submit Data",
@@ -73,6 +81,7 @@ const translations = {
         alert_date_invalid: "End date must be after or equal to start date",
         alert_meeting_time_req: "Please enter meeting time",
         alert_meeting_time_invalid: "Meeting start time must be before end time",
+        alert_required_email: "Please select at least 1 required email recipient",
         btn_saving: "Saving...",
         error_prefix: "Error: ",
         confirm_success: "Data saved successfully"
@@ -131,7 +140,12 @@ function toggleMeetingFields() {
         meetingSection.style.display = 'block';
         meetingSection.style.opacity = '0';
         setTimeout(() => meetingSection.style.opacity = '1', 10);
-        meetingFields.forEach(field => field.required = true);
+        // set required เฉพาะ field จริง ไม่รวม search input ที่ไม่ได้ส่ง form
+        meetingFields.forEach(field => {
+            if (field.id !== 'requiredEmailSearch' && field.id !== 'ccEmailSearch') {
+                field.required = true;
+            }
+        });
         updateMeetingDate();
     } else {
         meetingSection.style.display = 'none';
@@ -150,10 +164,10 @@ function updateMeetingDate() {
     }
 }
 
-// ฟังก์ชันค้นหาอีเมลผ่าน API
-async function searchEmails(searchTerm) {
+// ฟังก์ชันค้นหาอีเมลผ่าน API (สำหรับ Required Email)
+async function searchRequiredEmails(searchTerm) {
     if (searchTerm.length < 2) {
-        document.getElementById('emailSearchResults').style.display = 'none';
+        document.getElementById('requiredEmailSearchResults').style.display = 'none';
         return;
     }
     
@@ -163,24 +177,24 @@ async function searchEmails(searchTerm) {
         
         if (data.error) {
             console.error('API Error:', data.error);
-            displaySearchResults([], data.error);
+            displayRequiredSearchResults([], data.error);
             return;
         }
         
         if (Array.isArray(data)) {
-            displaySearchResults(data);
+            displayRequiredSearchResults(data);
         } else {
-            displaySearchResults([], 'รูปแบบข้อมูลไม่ถูกต้อง');
+            displayRequiredSearchResults([], 'รูปแบบข้อมูลไม่ถูกต้อง');
         }
     } catch (error) {
         console.error('Search error:', error);
-        displaySearchResults([], 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        displayRequiredSearchResults([], 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
     }
 }
 
-// แสดงผลการค้นหา
-function displaySearchResults(results, errorMessage = null) {
-    const searchResults = document.getElementById('emailSearchResults');
+// แสดงผลการค้นหา (Required Email)
+function displayRequiredSearchResults(results, errorMessage = null) {
+    const searchResults = document.getElementById('requiredEmailSearchResults');
     
     if (errorMessage) {
         searchResults.innerHTML = `<div class="search-result-item error">${errorMessage}</div>`;
@@ -193,10 +207,10 @@ function displaySearchResults(results, errorMessage = null) {
             const name = result.name || '';
             const department = result.department || '';
             
-            const isSelected = selectedEmailList.some(item => item.email === email);
+            const isSelected = selectedRequiredEmailList.some(item => item.email === email);
             if (!isSelected) {
                 html += `
-                    <div class="search-result-item" onclick="selectEmail('${email}', '${name}', '${department}')">
+                    <div class="search-result-item" onclick="selectRequiredEmail('${email}', '${name}', '${department}')">
                         <span class="result-name">${name}</span>
                         <span class="result-email">${email}</span>
                         <small class="result-dept">${department}</small>
@@ -214,43 +228,148 @@ function displaySearchResults(results, errorMessage = null) {
     searchResults.style.display = 'block';
 }
 
-// เลือกอีเมล
-window.selectEmail = function(email, name, department) {
-    selectedEmailList.push({ email, name, department });
+// เลือกอีเมล (Required)
+window.selectRequiredEmail = function(email, name, department) {
+    selectedRequiredEmailList.push({ email, name, department });
     
     const hiddenInput = document.createElement('input');
     hiddenInput.type = 'hidden';
-    hiddenInput.name = 'email_recipients[]';
+    hiddenInput.name = 'required_recipients[]';
     hiddenInput.value = email;
-    hiddenInput.id = `email_${email.replace(/[@.]/g, '_')}`;
+    hiddenInput.id = `req_email_${email.replace(/[@.]/g, '_')}`;
     document.getElementById('visitorForm').appendChild(hiddenInput);
     
-    const selectedEmails = document.getElementById('selectedEmails');
+    const selectedEmails = document.getElementById('selectedRequiredEmails');
     const selectedTag = document.createElement('div');
-    selectedTag.className = 'selected-email-tag';
-    selectedTag.id = `tag_${email.replace(/[@.]/g, '_')}`;
+    selectedTag.className = 'selected-email-tag required-tag';
+    selectedTag.id = `req_tag_${email.replace(/[@.]/g, '_')}`;
     selectedTag.innerHTML = `
         <span class="selected-email-info">
             <span class="selected-name">${name}</span>
             <span class="selected-email">${email}</span>
         </span>
-        <span class="remove-email" onclick="removeEmail('${email}')">&times;</span>
+        <span class="remove-email" onclick="removeRequiredEmail('${email}')">&times;</span>
     `;
     selectedEmails.appendChild(selectedTag);
     
-    document.getElementById('emailSearch').value = '';
-    document.getElementById('emailSearchResults').style.display = 'none';
+    document.getElementById('requiredEmailSearch').value = '';
+    document.getElementById('requiredEmailSearchResults').style.display = 'none';
 };
 
-// ลบอีเมลที่เลือก
-window.removeEmail = function(email) {
-    selectedEmailList = selectedEmailList.filter(item => item.email !== email);
+// ลบอีเมลที่เลือก (Required)
+window.removeRequiredEmail = function(email) {
+    selectedRequiredEmailList = selectedRequiredEmailList.filter(item => item.email !== email);
     
-    const hiddenId = `email_${email.replace(/[@.]/g, '_')}`;
+    const hiddenId = `req_email_${email.replace(/[@.]/g, '_')}`;
     const hiddenInput = document.getElementById(hiddenId);
     if (hiddenInput) hiddenInput.remove();
     
-    const tagId = `tag_${email.replace(/[@.]/g, '_')}`;
+    const tagId = `req_tag_${email.replace(/[@.]/g, '_')}`;
+    const tag = document.getElementById(tagId);
+    if (tag) tag.remove();
+};
+
+// ฟังก์ชันค้นหาอีเมลผ่าน API (สำหรับ CC Email)
+async function searchCCEmails(searchTerm) {
+    if (searchTerm.length < 2) {
+        document.getElementById('ccEmailSearchResults').style.display = 'none';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`get_emails.php?term=${encodeURIComponent(searchTerm)}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('API Error:', data.error);
+            displayCCSearchResults([], data.error);
+            return;
+        }
+        
+        if (Array.isArray(data)) {
+            displayCCSearchResults(data);
+        } else {
+            displayCCSearchResults([], 'รูปแบบข้อมูลไม่ถูกต้อง');
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        displayCCSearchResults([], 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
+    }
+}
+
+// แสดงผลการค้นหา (CC Email)
+function displayCCSearchResults(results, errorMessage = null) {
+    const searchResults = document.getElementById('ccEmailSearchResults');
+    
+    if (errorMessage) {
+        searchResults.innerHTML = `<div class="search-result-item error">${errorMessage}</div>`;
+    } else if (!results || results.length === 0) {
+        searchResults.innerHTML = '<div class="search-result-item no-results">ไม่พบผลการค้นหา</div>';
+    } else {
+        let html = '';
+        results.forEach(result => {
+            const email = result.email || result.value;
+            const name = result.name || '';
+            const department = result.department || '';
+            
+            const isSelected = selectedCCEmailList.some(item => item.email === email);
+            if (!isSelected) {
+                html += `
+                    <div class="search-result-item" onclick="selectCCEmail('${email}', '${name}', '${department}')">
+                        <span class="result-name">${name}</span>
+                        <span class="result-email">${email}</span>
+                        <small class="result-dept">${department}</small>
+                    </div>
+                `;
+            }
+        });
+        
+        if (html === '') {
+            html = '<div class="search-result-item no-results">เลือกรายการอื่นแล้ว</div>';
+        }
+        
+        searchResults.innerHTML = html;
+    }
+    searchResults.style.display = 'block';
+}
+
+// เลือกอีเมล (CC)
+window.selectCCEmail = function(email, name, department) {
+    selectedCCEmailList.push({ email, name, department });
+    
+    const hiddenInput = document.createElement('input');
+    hiddenInput.type = 'hidden';
+    hiddenInput.name = 'cc_recipients[]';
+    hiddenInput.value = email;
+    hiddenInput.id = `cc_email_${email.replace(/[@.]/g, '_')}`;
+    document.getElementById('visitorForm').appendChild(hiddenInput);
+    
+    const selectedEmails = document.getElementById('selectedCCEmails');
+    const selectedTag = document.createElement('div');
+    selectedTag.className = 'selected-email-tag cc-tag';
+    selectedTag.id = `cc_tag_${email.replace(/[@.]/g, '_')}`;
+    selectedTag.innerHTML = `
+        <span class="selected-email-info">
+            <span class="selected-name">${name}</span>
+            <span class="selected-email">${email}</span>
+        </span>
+        <span class="remove-email" onclick="removeCCEmail('${email}')">&times;</span>
+    `;
+    selectedEmails.appendChild(selectedTag);
+    
+    document.getElementById('ccEmailSearch').value = '';
+    document.getElementById('ccEmailSearchResults').style.display = 'none';
+};
+
+// ลบอีเมลที่เลือก (CC)
+window.removeCCEmail = function(email) {
+    selectedCCEmailList = selectedCCEmailList.filter(item => item.email !== email);
+    
+    const hiddenId = `cc_email_${email.replace(/[@.]/g, '_')}`;
+    const hiddenInput = document.getElementById(hiddenId);
+    if (hiddenInput) hiddenInput.remove();
+    
+    const tagId = `cc_tag_${email.replace(/[@.]/g, '_')}`;
     const tag = document.getElementById(tagId);
     if (tag) tag.remove();
 };
@@ -264,9 +383,13 @@ function validateDates() {
     const currentLang = localStorage.getItem('vms_lang') || 'th';
     const t = translations[currentLang];
 
-    if (startDate.value && endDate.value && startDate.value > endDate.value) {
-        alert(t.alert_date_invalid);
-        endDate.value = startDate.value;
+    if (startDate.value && endDate.value) {
+        // เปรียบเทียบ string โดยตรง เพราะ datetime-local format คือ YYYY-MM-DDTHH:MM
+        // ซึ่งสามารถ sort ตามตัวอักษรได้ถูกต้องเสมอ ไม่มีปัญหา timezone
+        if (startDate.value > endDate.value) {
+            alert(t.alert_date_invalid);
+            return;
+        }
     }
     updateMeetingDate();
 }
@@ -274,10 +397,10 @@ function validateDates() {
 // ตั้งค่าวันที่เริ่มต้น
 function setDefaultDates() {
     const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    const endTime = new Date(now);
+    endTime.setHours(endTime.getHours() + 1); // เพิ่ม 1 ชั่วโมง
     
-    function formatDate(date) {
+    function formatDateTime(date) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
@@ -289,8 +412,8 @@ function setDefaultDates() {
     const startDate = document.getElementById('visit_start_datetime');
     const endDate = document.getElementById('visit_end_datetime');
     
-    if (startDate) startDate.value = formatDate(now);
-    if (endDate) endDate.value = formatDate(tomorrow);
+    if (startDate) startDate.value = formatDateTime(now);
+    if (endDate) endDate.value = formatDateTime(endTime);
     updateMeetingDate();
 }
 
@@ -319,12 +442,19 @@ function resetForm() {
     document.getElementById('welcome_board_check').checked = false;
     document.getElementById('factory_tour').value = '0';
     document.getElementById('factory_tour_check').checked = false;
+    document.getElementById('coffee_snack').value = '0';
+    document.getElementById('coffee_snack_check').checked = false;
+    document.getElementById('lunch').value = '0';
+    document.getElementById('lunch_check').checked = false;
     document.getElementById('meeting_room').value = '0';
     document.getElementById('meeting_room_check').checked = false;
     
-    selectedEmailList = [];
-    document.getElementById('selectedEmails').innerHTML = '';
-    document.querySelectorAll('input[name="email_recipients[]"]').forEach(input => input.remove());
+    selectedRequiredEmailList = [];
+    selectedCCEmailList = [];
+    document.getElementById('selectedRequiredEmails').innerHTML = '';
+    document.getElementById('selectedCCEmails').innerHTML = '';
+    document.querySelectorAll('input[name="required_recipients[]"]').forEach(input => input.remove());
+    document.querySelectorAll('input[name="cc_recipients[]"]').forEach(input => input.remove());
     
     toggleMeetingFields();
     setDefaultDates();
@@ -367,29 +497,56 @@ document.addEventListener('DOMContentLoaded', function() {
     // เรียกใช้ setLanguage ครั้งแรก
     setLanguage(currentLang);
     
-    // Email search
-    const emailSearch = document.getElementById('emailSearch');
-    const searchResults = document.getElementById('emailSearchResults');
+    // Required Email search
+    const requiredEmailSearch = document.getElementById('requiredEmailSearch');
+    const requiredSearchResults = document.getElementById('requiredEmailSearchResults');
     
-    if (emailSearch) {
-        emailSearch.addEventListener('input', function(e) {
+    if (requiredEmailSearch) {
+        requiredEmailSearch.addEventListener('input', function(e) {
             clearTimeout(searchTimeout);
             const searchTerm = e.target.value.trim();
             
             if (searchTerm.length >= 2) {
-                searchTimeout = setTimeout(() => searchEmails(searchTerm), 300);
+                searchTimeout = setTimeout(() => searchRequiredEmails(searchTerm), 300);
             } else {
-                searchResults.style.display = 'none';
+                requiredSearchResults.style.display = 'none';
             }
         });
         
-        emailSearch.addEventListener('focus', function() {
-            if (this.value.length >= 2) searchEmails(this.value);
+        requiredEmailSearch.addEventListener('focus', function() {
+            if (this.value.length >= 2) searchRequiredEmails(this.value);
         });
         
         document.addEventListener('click', function(e) {
-            if (!emailSearch.contains(e.target) && !searchResults.contains(e.target)) {
-                searchResults.style.display = 'none';
+            if (!requiredEmailSearch.contains(e.target) && !requiredSearchResults.contains(e.target)) {
+                requiredSearchResults.style.display = 'none';
+            }
+        });
+    }
+    
+    // CC Email search
+    const ccEmailSearch = document.getElementById('ccEmailSearch');
+    const ccSearchResults = document.getElementById('ccEmailSearchResults');
+    
+    if (ccEmailSearch) {
+        ccEmailSearch.addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            const searchTerm = e.target.value.trim();
+            
+            if (searchTerm.length >= 2) {
+                searchTimeout = setTimeout(() => searchCCEmails(searchTerm), 300);
+            } else {
+                ccSearchResults.style.display = 'none';
+            }
+        });
+        
+        ccEmailSearch.addEventListener('focus', function() {
+            if (this.value.length >= 2) searchCCEmails(this.value);
+        });
+        
+        document.addEventListener('click', function(e) {
+            if (!ccEmailSearch.contains(e.target) && !ccSearchResults.contains(e.target)) {
+                ccSearchResults.style.display = 'none';
             }
         });
     }
@@ -413,6 +570,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (factoryTourCheck) {
         factoryTourCheck.addEventListener('change', function() {
             document.getElementById('factory_tour').value = this.checked ? '1' : '0';
+        });
+    }
+    
+    const coffeeSnackCheck = document.getElementById('coffee_snack_check');
+    if (coffeeSnackCheck) {
+        coffeeSnackCheck.addEventListener('change', function() {
+            document.getElementById('coffee_snack').value = this.checked ? '1' : '0';
+        });
+    }
+    
+    const lunchCheck = document.getElementById('lunch_check');
+    if (lunchCheck) {
+        lunchCheck.addEventListener('change', function() {
+            document.getElementById('lunch').value = this.checked ? '1' : '0';
         });
     }
     
@@ -440,10 +611,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // ตรวจสอบวันที่
-            if (startDate.value && endDate.value && startDate.value > endDate.value) {
-                alert(t.alert_date_invalid); // ใชัข้อความตามภาษา
-                return;
+            // ตรวจสอบวันที่ - แก้ไขให้ใช้ timestamp ในการเปรียบเทียบ
+            const startDate = document.getElementById('visit_start_datetime');
+            const endDate = document.getElementById('visit_end_datetime');
+            
+            if (startDate.value && endDate.value) {
+                // เปรียบเทียบ string โดยตรง เพราะ datetime-local format คือ YYYY-MM-DDTHH:MM
+                if (startDate.value > endDate.value) {
+                    alert(t.alert_date_invalid);
+                    return;
+                }
             }
             
             // ตรวจสอบการจองห้องประชุม
@@ -452,12 +629,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const meetingEnd = document.getElementById('meeting_end').value;
                 
                 if (!meetingStart || !meetingEnd) {
-                    alert(t.alert_meeting_time_req); // ใชัข้อความตามภาษา
+                    alert(t.alert_meeting_time_req);
                     return;
                 }
                 
                 if (meetingStart >= meetingEnd) {
-                    alert(t.alert_meeting_time_invalid); // ใชัข้อความตามภาษา
+                    alert(t.alert_meeting_time_invalid);
+                    return;
+                }
+                
+                // ตรวจสอบว่ามีการเลือกอีเมลผู้รับอย่างน้อย 1 ท่าน
+                if (selectedRequiredEmailList.length === 0) {
+                    alert(t.alert_required_email);
                     return;
                 }
             }
@@ -465,7 +648,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // แสดง Loading
             isSubmitting = true;
             const submitBtn = document.querySelector('.btn-submit');
-            submitBtn.innerHTML = `<span class="spinner"></span> ${t.btn_saving}`; // ใชัข้อความตามภาษา
+            const originalContent = submitBtn.innerHTML;
+            submitBtn.innerHTML = `<span class="spinner"></span> ${t.btn_saving}`;
             submitBtn.disabled = true;
             
             try {
@@ -485,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = await response.json();
                 
                 if (data.success) {
-                    showAlert('success', data.message); // message จาก backend อาจจะต้องปรับถ้าอยากให้เป็นภาษาอังกฤษ 100% แต่ตรงนี้ alert ของระบบจะแสดงตามที่ส่งกลับมา
+                    showAlert('success', data.message);
                     
                     // รอ 1.5 วินาทีแล้ว refresh หน้า
                     setTimeout(() => {
@@ -493,11 +677,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 1500);
                 } else {
                     showAlert('error', data.message);
-                    restoreSubmitButton();
+                    submitBtn.innerHTML = originalContent;
+                    submitBtn.disabled = false;
+                    isSubmitting = false;
                 }
             } catch (error) {
-                showAlert('error', t.error_prefix + error.message); // ใชัข้อความตามภาษา
-                restoreSubmitButton();
+                showAlert('error', t.error_prefix + error.message);
+                submitBtn.innerHTML = originalContent;
+                submitBtn.disabled = false;
+                isSubmitting = false;
             }
         });
     }

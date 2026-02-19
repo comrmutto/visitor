@@ -9,18 +9,24 @@ header('Content-Type: application/json');
 
 session_start();
 
-// ... (ส่วนโค้ดตรวจสอบ Request และ Transaction ID เหมือนเดิม) ...
+// ตรวจสอบ Request Method
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    ob_clean(); echo json_encode(['success' => false, 'message' => 'Method not allowed']); exit;
+    ob_clean(); 
+    echo json_encode(['success' => false, 'message' => 'Method not allowed']); 
+    exit;
 }
+
+// ป้องกันการส่งซ้ำ
 $transaction_id = md5(serialize($_POST) . time());
 if (isset($_SESSION['last_transaction']) && $_SESSION['last_transaction'] === $transaction_id) {
-    ob_clean(); echo json_encode(['success' => true, 'message' => 'ข้อมูลถูกบันทึกแล้ว']); exit;
+    ob_clean(); 
+    echo json_encode(['success' => true, 'message' => 'ข้อมูลถูกบันทึกแล้ว']); 
+    exit;
 }
 $_SESSION['last_transaction'] = $transaction_id;
 
 try {
-    // ... (ส่วนรับค่า $_POST และ Validation เหมือนเดิมทุกประการ) ...
+    // รับค่าจาก $_POST
     $company_name        = trim($_POST['company_name'] ?? '');
     $visitor_name        = trim($_POST['visitor_name'] ?? '');
     $purpose             = trim($_POST['purpose'] ?? '');
@@ -30,23 +36,38 @@ try {
     $visitor_type        = $_POST['visitor_type'] ?? 'Normal';
     $welcome_board       = isset($_POST['welcome_board']) ? (int)$_POST['welcome_board'] : 0;
     $factory_tour        = isset($_POST['factory_tour']) ? (int)$_POST['factory_tour'] : 0;
+    $coffee_snack        = isset($_POST['coffee_snack']) ? (int)$_POST['coffee_snack'] : 0;
+    $lunch               = isset($_POST['lunch']) ? (int)$_POST['lunch'] : 0;
     $has_meeting_room    = isset($_POST['meeting_room']) ? (int)$_POST['meeting_room'] : 0;
     $language            = $_POST['language'] ?? 'th';
-    $meeting_date          = $has_meeting_room ? ($_POST['meeting_date'] ?? null) : null;
-    $meeting_start         = $has_meeting_room ? ($_POST['meeting_start'] ?? null) : null;
-    $meeting_end           = $has_meeting_room ? ($_POST['meeting_end'] ?? null) : null;
+    $meeting_date        = $has_meeting_room ? ($_POST['meeting_date'] ?? null) : null;
+    $meeting_start       = $has_meeting_room ? ($_POST['meeting_start'] ?? null) : null;
+    $meeting_end         = $has_meeting_room ? ($_POST['meeting_end'] ?? null) : null;
     $selected_meeting_room = $has_meeting_room ? ($_POST['meeting_room_select'] ?? null) : null;
 
-    $all_recipients    = $_POST['email_recipients'] ?? [];
-    $email_recipients  = [];
-    foreach ($all_recipients as $email) {
+    // รับค่า required recipients
+    $required_recipients = $_POST['required_recipients'] ?? [];
+    $required_emails = [];
+    foreach ($required_recipients as $email) {
         $email = trim($email);
-        if (!empty($email) && !in_array($email, $email_recipients)) {
-            $email_recipients[] = $email;
+        if (!empty($email) && !in_array($email, $required_emails)) {
+            $required_emails[] = $email;
         }
     }
-    $email_recipients_str = implode(',', $email_recipients);
+    $required_emails_str = implode(',', $required_emails);
 
+    // รับค่า cc recipients
+    $cc_recipients = $_POST['cc_recipients'] ?? [];
+    $cc_emails = [];
+    foreach ($cc_recipients as $email) {
+        $email = trim($email);
+        if (!empty($email) && !in_array($email, $cc_emails)) {
+            $cc_emails[] = $email;
+        }
+    }
+    $cc_emails_str = implode(',', $cc_emails);
+
+    // Validation
     if (empty($company_name) || empty($visitor_name) || empty($purpose) || empty($visit_start_datetime) || empty($visit_end_datetime)) {
         throw new Exception('กรุณากรอกข้อมูลให้ครบถ้วน');
     }
@@ -60,32 +81,37 @@ try {
         if ($meeting_start >= $meeting_end) {
             throw new Exception('เวลาเริ่มประชุมต้องน้อยกว่าเวลาสิ้นสุดประชุม');
         }
+        if (empty($required_emails)) {
+            throw new Exception('กรุณาเลือกอีเมลผู้รับอย่างน้อย 1 ท่าน');
+        }
     }
 
-    // Insert Database
+    // Insert Database - เพิ่มฟิลด์ required_recipients และ cc_recipients
     $sql = "INSERT INTO visitors (
         company_name, visitor_name, purpose,
         visit_start_datetime, visit_end_datetime, visit_period,
-        visitor_type, welcome_board, factory_tour, has_meeting_room,
-        meeting_date, meeting_start, meeting_end, selected_meeting_room, email_recipients
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        visitor_type, welcome_board, factory_tour, coffee_snack, lunch, has_meeting_room,
+        meeting_date, meeting_start, meeting_end, selected_meeting_room, 
+        required_recipients, cc_recipients
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) throw new Exception('Prepare failed: ' . $conn->error);
 
     $stmt->bind_param(
-        "sssssssiiisssss",
+        "sssssssiiiiissssss",
         $company_name, $visitor_name, $purpose,
         $visit_start_datetime, $visit_end_datetime, $visit_period,
-        $visitor_type, $welcome_board, $factory_tour, $has_meeting_room,
-        $meeting_date, $meeting_start, $meeting_end, $selected_meeting_room, $email_recipients_str
+        $visitor_type, $welcome_board, $factory_tour, $coffee_snack, $lunch, $has_meeting_room,
+        $meeting_date, $meeting_start, $meeting_end, $selected_meeting_room,
+        $required_emails_str, $cc_emails_str
     );
 
     if (!$stmt->execute()) throw new Exception('บันทึกข้อมูลไม่สำเร็จ: ' . $stmt->error);
     $visitor_id = $stmt->insert_id;
     $stmt->close();
 
-    // Prepare Email Data
+    // Prepare Email Data - เพิ่ม required_recipients และ cc_recipients
     $email_data = [
         'id'                   => $visitor_id,
         'company_name'         => $company_name,
@@ -97,46 +123,67 @@ try {
         'visitor_type'         => $visitor_type,
         'welcome_board'        => $welcome_board,
         'factory_tour'         => $factory_tour,
+        'coffee_snack'         => $coffee_snack,
+        'lunch'                => $lunch,
         'has_meeting_room'     => $has_meeting_room,
         'meeting_date'         => $meeting_date,
         'meeting_start'        => $meeting_start,
         'meeting_end'          => $meeting_end,
         'selected_meeting_room'=> $selected_meeting_room,
-        'email_recipients'     => $email_recipients,
+        'required_recipients'  => $required_emails,
+        'cc_recipients'        => $cc_emails,
         'language'             => $language
     ];
 
     // Send Email
     $email_sent = sendVisitorEmail($email_data);
 
-    // Log Email
-    if (!empty($email_recipients) || ($has_meeting_room && $selected_meeting_room)) {
-        $log_sql = "INSERT INTO email_logs (visitor_id, recipient_email, sent_status, sent_at) VALUES (?, ?, ?, NOW())";
+    // Log Email สำหรับ Required Recipients
+    if (!empty($required_emails) || ($has_meeting_room && $selected_meeting_room)) {
+        $log_sql = "INSERT INTO email_logs (visitor_id, recipient_email, sent_status, sent_at, recipient_type) VALUES (?, ?, ?, NOW(), ?)";
         $log_stmt = $conn->prepare($log_sql);
         $logged = [];
+        
+        // Log ห้องประชุม (ถ้ามี)
         if ($has_meeting_room && $selected_meeting_room) {
             $room_email = getMeetingRoomEmail($selected_meeting_room);
             if ($room_email && !in_array($room_email, $logged)) {
                 $status = $email_sent ? 'success' : 'failed';
-                $log_stmt->bind_param("iss", $visitor_id, $room_email, $status);
+                $type = 'meeting_room';
+                $log_stmt->bind_param("isss", $visitor_id, $room_email, $status, $type);
                 $log_stmt->execute();
                 $logged[] = $room_email;
             }
         }
-        foreach ($email_recipients as $recipient) {
+        
+        // Log Required Recipients
+        foreach ($required_emails as $recipient) {
             if (!in_array($recipient, $logged)) {
                 $status = $email_sent ? 'success' : 'failed';
-                $log_stmt->bind_param("iss", $visitor_id, $recipient, $status);
+                $type = 'required';
+                $log_stmt->bind_param("isss", $visitor_id, $recipient, $status, $type);
                 $log_stmt->execute();
                 $logged[] = $recipient;
             }
         }
+        
+        // Log CC Recipients
+        foreach ($cc_emails as $recipient) {
+            if (!in_array($recipient, $logged)) {
+                $status = $email_sent ? 'success' : 'failed';
+                $type = 'cc';
+                $log_stmt->bind_param("isss", $visitor_id, $recipient, $status, $type);
+                $log_stmt->execute();
+                $logged[] = $recipient;
+            }
+        }
+        
         $log_stmt->close();
     }
 
     $response = [
         'success' => true,
-        'message' => 'บันทึกข้อมูลเรียบร้อยแล้ว' . (isset($email_sent) && !$email_sent ? ' (แต่ไม่สามารถส่งอีเมลได้)' : ''),
+        'message' => 'บันทึกข้อมูลเรียบร้อยแล้ว' . ($email_sent ? '' : ' (แต่ไม่สามารถส่งอีเมลได้)'),
         'visitor_id' => $visitor_id,
     ];
 
@@ -153,6 +200,6 @@ if (ob_get_length()) {
 }
 
 header('Content-Type: application/json; charset=utf-8');
-echo json_encode($response);
+echo json_encode($response, JSON_UNESCAPED_UNICODE);
 exit();
 ?>

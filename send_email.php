@@ -31,6 +31,8 @@ $email_translations = [
         'normal' => 'Normal',
         'welcome_board' => 'Welcome Board',
         'factory_tour' => 'Factory Tour',
+        'coffee_snack' => 'กาแฟ-น้ำดื่ม',
+        'lunch' => 'อาหารกลางวัน',
         'yes' => 'ต้องการ',
         'no' => 'ไม่ต้องการ',
         'meeting_details' => 'รายละเอียดการจองห้องประชุม',
@@ -39,7 +41,8 @@ $email_translations = [
         'meeting_time' => 'เวลา',
         'start_time' => 'เวลาเริ่ม',
         'end_time' => 'เวลาสิ้นสุด',
-        'cc_recipients' => 'ผู้รับสำเนา',
+        'required_recipients' => 'ผู้รับ (Required)',
+        'cc_recipients' => 'ผู้รับสำเนา (CC)',
         'note' => 'หมายเหตุ',
         'meeting_note' => 'กรุณาตรวจสอบและเตรียมความพร้อมของห้องประชุมตามวันและเวลาที่ระบุ',
         'auto_email' => 'อีเมลนี้ส่งโดยอัตโนมัติจากระบบ VMS',
@@ -59,6 +62,8 @@ $email_translations = [
         'normal' => 'Normal',
         'welcome_board' => 'Welcome Board',
         'factory_tour' => 'Factory Tour',
+        'coffee_snack' => 'Coffee & Drinks',
+        'lunch' => 'Lunch',
         'yes' => 'Yes',
         'no' => 'No',
         'meeting_details' => 'Meeting Room Booking Details',
@@ -67,6 +72,7 @@ $email_translations = [
         'meeting_time' => 'Time',
         'start_time' => 'Start Time',
         'end_time' => 'End Time',
+        'required_recipients' => 'Required Recipients',
         'cc_recipients' => 'CC Recipients',
         'note' => 'Note',
         'meeting_note' => 'Please check and prepare the meeting room according to the specified date and time',
@@ -88,10 +94,12 @@ function sendVisitorEmail($visitor_data) {
     }
 
     try {
-        // สร้างรายชื่อผู้รับทั้งหมด (ไม่ซ้ำ)
+        $lang = $visitor_data['language'] ?? 'th';
+        
+        // เตรียมผู้รับทั้งหมด
         $all_recipients = [];
         
-        // เพิ่มห้องประชุม
+        // เพิ่มห้องประชุม (ถ้ามี)
         if (!empty($visitor_data['has_meeting_room']) && !empty($visitor_data['selected_meeting_room'])) {
             $room_email = getMeetingRoomEmail($visitor_data['selected_meeting_room']);
             if ($room_email) {
@@ -99,9 +107,9 @@ function sendVisitorEmail($visitor_data) {
             }
         }
         
-        // เพิ่ม CC recipients
-        if (!empty($visitor_data['email_recipients'])) {
-            foreach ($visitor_data['email_recipients'] as $email) {
+        // เพิ่ม Required Recipients (To)
+        if (!empty($visitor_data['required_recipients'])) {
+            foreach ($visitor_data['required_recipients'] as $email) {
                 $email = trim($email);
                 if (!empty($email) && !in_array($email, $all_recipients)) {
                     $all_recipients[] = $email;
@@ -111,23 +119,23 @@ function sendVisitorEmail($visitor_data) {
         
         // ถ้ามีผู้รับ ให้ส่งอีเมลครั้งเดียว
         if (!empty($all_recipients)) {
-            $lang = $visitor_data['language'] ?? 'th';
             $subject = ($lang === 'th') 
                 ? "แจ้งเตือน: ผู้มาติดต่อใหม่ - " . $visitor_data['visitor_name']
                 : "Notification: New Visitor - " . $visitor_data['visitor_name'];
             
-            $body = createEmailContent($visitor_data, 'cc', $lang);
+            $body = createEmailContent($visitor_data, $lang);
             
             // สร้าง ICS ถ้ามีการจองห้องประชุม
             $ics_content = null;
             if (!empty($visitor_data['has_meeting_room'])) {
-                $ics_content = generateICS($visitor_data, $all_recipients);
+            $ics_content = generateICS($visitor_data, $all_recipients, $visitor_data['cc_recipients'] ?? []);
                 $subject = ($lang === 'th')
                     ? "Meeting Request: " . $visitor_data['visitor_name'] . " - " . $visitor_data['company_name']
                     : "Meeting Request: " . $visitor_data['visitor_name'] . " - " . $visitor_data['company_name'];
             }
             
-            return _sendSMTP($all_recipients, $subject, $body, $ics_content);
+            // ส่งอีเมลโดยแยก Required และ CC
+            return _sendSMTPWithCC($all_recipients, $visitor_data['cc_recipients'] ?? [], $subject, $body, $ics_content, $lang);
         }
         
         return true;
@@ -141,7 +149,7 @@ function sendVisitorEmail($visitor_data) {
 // ============================================================
 // ฟังก์ชันสร้างเนื้อหา iCalendar (.ics) พร้อม attendees ทั้งหมด
 // ============================================================
-function generateICS($data, $all_attendees = []) {
+function generateICS($data, $all_attendees = [], $cc_attendees = []) {
     $start_str = $data['meeting_date'] . ' ' . $data['meeting_start'];
     $end_str   = $data['meeting_date'] . ' ' . $data['meeting_end'];
     
@@ -179,15 +187,22 @@ function generateICS($data, $all_attendees = []) {
     $ics .= "LOCATION:$location\r\n";
     $ics .= "ORGANIZER;CN=VMS System:MAILTO:" . SMTP_FROM . "\r\n";
     
-    // เพิ่ม attendees ทุกคนใน ICS
+    // เพิ่ม Required/Room attendees (REQ-PARTICIPANT)
     $added_attendees = [];
     foreach ($all_attendees as $attendee) {
         $attendee_clean = strtolower(trim($attendee));
         if (empty($attendee_clean) || in_array($attendee_clean, $added_attendees)) continue;
-        
         $added_attendees[] = $attendee_clean;
-        $role = isMeetingRoomEmail($attendee_clean) ? "ROLE=REQ-PARTICIPANT" : "ROLE=OPT-PARTICIPANT";
-        $ics .= "ATTENDEE;{$role};PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN=" . ($role == "ROLE=REQ-PARTICIPANT" ? "Meeting Room" : "Participant") . ":MAILTO:$attendee\r\n";
+        $ics .= "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN={$attendee}:MAILTO:{$attendee}\r\n";
+    }
+    
+    // เพิ่ม CC attendees (OPT-PARTICIPANT)
+    foreach ($cc_attendees as $attendee) {
+        $attendee = trim($attendee);
+        $attendee_clean = strtolower($attendee);
+        if (empty($attendee_clean) || in_array($attendee_clean, $added_attendees)) continue;
+        $added_attendees[] = $attendee_clean;
+        $ics .= "ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=OPT-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;CN={$attendee}:MAILTO:{$attendee}\r\n";
     }
     
     $ics .= "END:VEVENT\r\n";
@@ -197,9 +212,9 @@ function generateICS($data, $all_attendees = []) {
 }
 
 // ============================================================
-// ฟังก์ชัน internal: ส่ง SMTP (เพิ่มรองรับ $ical_content)
+// ฟังก์ชัน internal: ส่ง SMTP พร้อมแยก To และ CC
 // ============================================================
-function _sendSMTP(array $to_list, string $subject, string $html_body, $ical_content = null): bool {
+function _sendSMTPWithCC(array $to_list, array $cc_list, string $subject, string $html_body, $ical_content = null, $lang = 'th'): bool {
     $mail = new PHPMailer(true);
 
     try {
@@ -216,12 +231,24 @@ function _sendSMTP(array $to_list, string $subject, string $html_body, $ical_con
         // --- ผู้ส่ง ---
         $mail->setFrom(SMTP_FROM, SMTP_FROM_NAME);
 
-        // --- ผู้รับ (ใช้ array_unique ป้องกันซ้ำ) ---
+        // --- ผู้รับหลัก (To) ---
         $unique_to = array_unique($to_list);
         foreach ($unique_to as $email) {
             $email = trim($email);
             if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $mail->addAddress($email);
+            }
+        }
+
+        // --- ผู้รับสำเนา (CC) ---
+        $unique_cc = array_unique($cc_list);
+        foreach ($unique_cc as $email) {
+            $email = trim($email);
+            if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                // ตรวจสอบว่าไม่อยู่ใน To แล้ว
+                if (!in_array($email, $unique_to)) {
+                    $mail->addCC($email);
+                }
             }
         }
 
@@ -252,7 +279,7 @@ function _sendSMTP(array $to_list, string $subject, string $html_body, $ical_con
 // ============================================================
 // ฟังก์ชันสร้างเนื้อหาอีเมล (รองรับ 2 ภาษาและปรับ CSS)
 // ============================================================
-function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
+function createEmailContent($visitor_data, $lang = 'th') {
     global $email_translations;
     $t = $email_translations[$lang];
     
@@ -263,6 +290,8 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
     $visitor_type      = $visitor_data['visitor_type'] ?? 'Normal';
     $welcome_board     = !empty($visitor_data['welcome_board']);
     $factory_tour      = !empty($visitor_data['factory_tour']);
+    $coffee_snack      = !empty($visitor_data['coffee_snack']);
+    $lunch             = !empty($visitor_data['lunch']);
     $has_meeting_room  = !empty($visitor_data['has_meeting_room']);
 
     $start_fmt = !empty($visitor_data['visit_start_datetime'])
@@ -270,7 +299,7 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
     $end_fmt   = !empty($visitor_data['visit_end_datetime'])
         ? date('d/m/Y H:i', strtotime($visitor_data['visit_end_datetime'])) : '—';
 
-    // ---- CSS ที่ปรับปรุงใหม่ให้อ่านง่าย (email-safe, no dark-mode override) ----
+    // ---- CSS ที่ปรับปรุงใหม่ให้อ่านง่าย ----
     $css = "
         body { 
             font-family: 'Sarabun', 'Segoe UI', Arial, sans-serif !important; 
@@ -282,7 +311,7 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
             -webkit-text-size-adjust: 100% !important;
             -ms-text-size-adjust: 100% !important;
         }
-        * { color: inherit; box-sizing: border-box; }
+        * { box-sizing: border-box; }
         .email-wrapper { 
             max-width: 650px !important; 
             margin: 0 auto !important; 
@@ -294,12 +323,7 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
         .email-header { 
             padding: 30px 35px !important; 
             text-align: center !important; 
-        }
-        .email-header.meeting { 
-            background-color: #0B6B4A !important; 
-        }
-        .email-header.notification { 
-            background-color: #1B4D8A !important; 
+            background: linear-gradient(135deg, #0B6B4A 0%, #1B4D8A 100%) !important;
         }
         .email-header h2 { 
             margin: 0 0 8px 0 !important; 
@@ -349,9 +373,6 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
             color: #1a202c !important; 
             display: inline-block !important;
             font-weight: 500 !important;
-        }
-        .info-value strong {
-            color: #1a202c !important;
         }
         .badge { 
             display: inline-block !important; 
@@ -438,6 +459,16 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
             border: 1px solid #cbd5e0 !important;
             margin: 3px 4px 3px 0 !important;
         }
+        .chip-required { 
+            background-color: #dbeafe !important; 
+            border-color: #3b82f6 !important;
+            color: #1e3a8a !important;
+            font-weight: 600 !important;
+        }
+        .chip-cc { 
+            background-color: #e2e8f0 !important; 
+            border-color: #94a3b8 !important;
+        }
         .email-footer { 
             text-align: center !important; 
             padding: 18px 35px !important; 
@@ -454,14 +485,11 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
         }
     ";
 
-    // ---- Header ตามประเภทอีเมล ----
-    $header_class = ($type === 'meeting_room') ? 'meeting' : 'notification';
-    $header_icon = ($type === 'meeting_room') ? '📅' : '👥';
-    
+    // ---- Header ----
     $header_html = "
-        <div class='email-header {$header_class}'>
-            <h2>{$header_icon} " . ($type === 'meeting_room' ? ($lang === 'th' ? 'แจ้งเตือนการจองห้องประชุม' : 'Meeting Room Booking Notification') : ($lang === 'th' ? 'ระบบแจ้งเตือนผู้มาติดต่อ' : 'Visitor Notification System')) . "</h2>
-            <p>" . ($type === 'meeting_room' ? ($lang === 'th' ? "ห้อง: {$meeting_room_name}" : "Room: {$meeting_room_name}") : ($lang === 'th' ? 'มีผู้มาติดต่อใหม่ในระบบ' : 'New visitor in the system')) . "</p>
+        <div class='email-header'>
+            <h2>📅 " . ($lang === 'th' ? 'แจ้งเตือนการนัดหมาย' : 'Meeting Notification') . "</h2>
+            <p>" . ($lang === 'th' ? "รายละเอียดผู้มาติดต่อและห้องประชุม" : "Visitor and meeting details") . "</p>
         </div>";
 
     // ---- Badges ----
@@ -474,6 +502,14 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
         : "<span class='badge-no'>❌ {$t['no']}</span>";
     
     $ft_badge = $factory_tour 
+        ? "<span class='badge-yes'>✅ {$t['yes']}</span>" 
+        : "<span class='badge-no'>❌ {$t['no']}</span>";
+    
+    $coffee_badge = $coffee_snack 
+        ? "<span class='badge-yes'>✅ {$t['yes']}</span>" 
+        : "<span class='badge-no'>❌ {$t['no']}</span>";
+    
+    $lunch_badge = $lunch 
         ? "<span class='badge-yes'>✅ {$t['yes']}</span>" 
         : "<span class='badge-no'>❌ {$t['no']}</span>";
 
@@ -506,29 +542,37 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
         </div>";
     }
 
+    // ---- Required recipients section ----
+    $required_section = '';
+    if (!empty($visitor_data['required_recipients'])) {
+        $chips = '';
+        foreach ($visitor_data['required_recipients'] as $email) {
+            $chips .= "<span class='chip chip-required'>📧 " . htmlspecialchars(trim($email)) . "</span>";
+        }
+        $required_section = "
+        <div class='info-section'>
+            <h3>📧 {$t['required_recipients']}</h3>
+            <div class='chip-container'>{$chips}</div>
+        </div>";
+    }
+
     // ---- CC recipients section ----
     $cc_section = '';
-    if ($type === 'cc' && !empty($visitor_data['email_recipients'])) {
-        $filtered = array_filter(
-            $visitor_data['email_recipients'],
-            fn($e) => !isMeetingRoomEmail(trim($e))
-        );
-        if (!empty($filtered)) {
-            $chips = '';
-            foreach ($filtered as $email) {
-                $chips .= "<span class='chip'>" . htmlspecialchars(trim($email)) . "</span>";
-            }
-            $cc_section = "
-            <div class='info-section'>
-                <h3>📧 {$t['cc_recipients']}</h3>
-                <div class='chip-container'>{$chips}</div>
-            </div>";
+    if (!empty($visitor_data['cc_recipients'])) {
+        $chips = '';
+        foreach ($visitor_data['cc_recipients'] as $email) {
+            $chips .= "<span class='chip chip-cc'>📨 " . htmlspecialchars(trim($email)) . "</span>";
         }
+        $cc_section = "
+        <div class='info-section'>
+            <h3>📨 {$t['cc_recipients']}</h3>
+            <div class='chip-container'>{$chips}</div>
+        </div>";
     }
 
     // ---- Meeting room note ----
     $note_section = '';
-    if ($type === 'meeting_room') {
+    if ($has_meeting_room) {
         $note_section = "
         <div class='note-box'>
             <strong>📌 {$t['note']}:</strong> {$t['meeting_note']}
@@ -543,7 +587,7 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>" . ($type === 'meeting_room' ? 'Meeting Request' : 'Visitor Notification') . "</title>
+    <title>" . ($lang === 'th' ? 'แจ้งเตือนการนัดหมาย' : 'Meeting Notification') . "</title>
     <style>{$css}</style>
 </head>
 <body>
@@ -595,9 +639,18 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
                 <span class='info-label'>{$t['factory_tour']}:</span>
                 <span class='info-value'>{$ft_badge}</span>
             </div>
+            <div class='info-row'>
+                <span class='info-label'>{$t['coffee_snack']}:</span>
+                <span class='info-value'>{$coffee_badge}</span>
+            </div>
+            <div class='info-row'>
+                <span class='info-label'>{$t['lunch']}:</span>
+                <span class='info-value'>{$lunch_badge}</span>
+            </div>
         </div>
 
         {$meeting_section}
+        {$required_section}
         {$cc_section}
         {$note_section}
 
@@ -613,23 +666,4 @@ function createEmailContent($visitor_data, $type = 'cc', $lang = 'th') {
 </body>
 </html>";
 }
-
-// ============================================================
-// ฟังก์ชันช่วยเหลืออื่นๆ (คงเดิม)
-// ============================================================
-function sendMeetingRoomEmail($to_email, $visitor_data) {
-    $lang = $visitor_data['language'] ?? 'th';
-    $subject = ($lang === 'th')
-        ? "Meeting Request: " . ($visitor_data['selected_meeting_room'] ?? '')
-        : "Meeting Request: " . ($visitor_data['selected_meeting_room'] ?? '');
-    $ics = generateICS($visitor_data, [$to_email]);
-    return _sendSMTP([$to_email], $subject, createEmailContent($visitor_data, 'meeting_room', $lang), $ics);
-}
-
-function sendCCEmail($cc_recipients, $visitor_data) {
-    $lang = $visitor_data['language'] ?? 'th';
-    $subject = ($lang === 'th')
-        ? "แจ้งเตือน: ผู้มาติดต่อใหม่ - " . $visitor_data['visitor_name']
-        : "Notification: New Visitor - " . $visitor_data['visitor_name'];
-    return _sendSMTP($cc_recipients, $subject, createEmailContent($visitor_data, 'cc', $lang));
-}
+?>
