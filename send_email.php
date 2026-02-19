@@ -329,12 +329,12 @@ function createEmailContent($visitor_data, $lang = 'th') {
             margin: 0 0 8px 0 !important; 
             font-size: 24px !important; 
             font-weight: 700 !important;
-            color: #ffffff !important;
+            color: #000816ff !important;
         }
         .email-header p { 
             margin: 0 !important; 
             font-size: 15px !important; 
-            color: #e8f0fe !important;
+            color: #000816ff !important;
         }
         .email-body { 
             padding: 30px 35px !important; 
