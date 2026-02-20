@@ -356,26 +356,28 @@ function validateDates() {
         const themeIconLight = document.getElementById('themeIconLight');
         const themeIconDark = document.getElementById('themeIconDark');
         
-        // ตรวจสอบธีมที่บันทึกไว้
-        const savedTheme = localStorage.getItem('vms_theme') || 'dark';
+        // ตรวจสอบธีมที่บันทึกไว้ (ค่าเริ่มต้นเป็นโหมดสว่าง)
+        const savedTheme = localStorage.getItem('vms_theme') || 'light';
         
         // ฟังก์ชันตั้งค่าธีม
         function setTheme(theme) {
             if (theme === 'light') {
                 document.documentElement.setAttribute('data-theme', 'light');
                 localStorage.setItem('vms_theme', 'light');
-                if (themeToggle) themeToggle.checked = true;
+                // โหมดสว่าง ให้สวิตช์อยู่ซ้าย (ดวงอาทิตย์)
+                if (themeToggle) themeToggle.checked = false; 
                 if (themeIconLight) themeIconLight.classList.add('active');
                 if (themeIconDark) themeIconDark.classList.remove('active');
             } else {
                 document.documentElement.setAttribute('data-theme', 'dark');
                 localStorage.setItem('vms_theme', 'dark');
-                if (themeToggle) themeToggle.checked = false;
+                // โหมดมืด ให้สวิตช์อยู่ขวา (พระจันทร์)
+                if (themeToggle) themeToggle.checked = true;  
                 if (themeIconLight) themeIconLight.classList.remove('active');
                 if (themeIconDark) themeIconDark.classList.add('active');
             }
             
-            // Force repaint
+            // Force repaint ป้องกัน CSS ค้าง
             document.body.style.display = 'none';
             document.body.offsetHeight; // Trigger reflow
             document.body.style.display = '';
@@ -387,11 +389,8 @@ function validateDates() {
         // Event listener สำหรับ toggle theme
         if (themeToggle) {
             themeToggle.addEventListener('change', function() {
-                if (this.checked) {
-                    setTheme('dark');
-                } else {
-                    setTheme('light');
-                }
+                // ถ้าสวิตช์ถูกเปิด (เลื่อนขวา) ให้เป็น dark, ถ้าปิด (เลื่อนซ้าย) ให้เป็น light
+                setTheme(this.checked ? 'dark' : 'light');
             });
         }
     })();

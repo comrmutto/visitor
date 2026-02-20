@@ -662,8 +662,8 @@ function setLanguage(lang) {
 }
 
 // --- INITIALIZE ---
-const currentLang = localStorage.getItem('vms_lang') || 'th';
-const currentTheme = localStorage.getItem('vms_theme') || 'dark';
+const currentLang = localStorage.getItem('vms_lang') || 'en';
+const currentTheme = localStorage.getItem('vms_theme') || 'light';
 
 document.addEventListener('DOMContentLoaded', () => {
     setLanguage(currentLang);
