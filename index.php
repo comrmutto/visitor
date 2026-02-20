@@ -388,9 +388,9 @@ function validateDates() {
         if (themeToggle) {
             themeToggle.addEventListener('change', function() {
                 if (this.checked) {
-                    setTheme('light');
-                } else {
                     setTheme('dark');
+                } else {
+                    setTheme('light');
                 }
             });
         }

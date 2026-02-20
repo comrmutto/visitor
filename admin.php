@@ -457,7 +457,33 @@ if ($action === 'delete_room') {
     $msg='ลบห้องประชุมเรียบร้อยแล้ว'; $msg_type='success';
 }
 
-// ---- Fetch data ----
+// ---- Visitor CRUD ----
+if ($action === 'edit_visitor') {
+    $id             = (int)$_POST['id'];
+    $company_name   = trim($_POST['company_name'] ?? '');
+    $visitor_name   = trim($_POST['visitor_name'] ?? '');
+    $purpose        = trim($_POST['purpose'] ?? '');
+    $visit_start    = $_POST['visit_start_datetime'] ?? '';
+    $visit_end      = $_POST['visit_end_datetime'] ?? '';
+    $visitor_type   = $_POST['visitor_type'] ?? 'Normal';
+    $welcome_board  = isset($_POST['welcome_board']) ? 1 : 0;
+    $factory_tour   = isset($_POST['factory_tour'])  ? 1 : 0;
+    $coffee_snack   = isset($_POST['coffee_snack'])  ? 1 : 0;
+    $lunch          = isset($_POST['lunch'])          ? 1 : 0;
+    if ($company_name && $visitor_name && $visit_start && $visit_end) {
+        $s = $conn->prepare("UPDATE visitors SET company_name=?,visitor_name=?,purpose=?,visit_start_datetime=?,visit_end_datetime=?,visitor_type=?,welcome_board=?,factory_tour=?,coffee_snack=?,lunch=? WHERE id=?");
+        $s->bind_param("ssssssiiiii", $company_name,$visitor_name,$purpose,$visit_start,$visit_end,$visitor_type,$welcome_board,$factory_tour,$coffee_snack,$lunch,$id);
+        if ($s->execute()) { $msg='แก้ไขข้อมูล Visitor เรียบร้อยแล้ว'; $msg_type='success'; }
+        else { $msg='เกิดข้อผิดพลาด: '.$conn->error; $msg_type='error'; }
+    } else { $msg='กรุณากรอกข้อมูลให้ครบถ้วน'; $msg_type='error'; }
+}
+if ($action === 'delete_visitor') {
+    $id = (int)$_POST['id'];
+    $conn->query("DELETE FROM visitors WHERE id=$id");
+    $msg='ลบข้อมูล Visitor เรียบร้อยแล้ว'; $msg_type='success';
+}
+
+
 $search      = trim($_GET['q'] ?? '');
 $dept_filter = trim($_GET['dept'] ?? '');
 
@@ -469,6 +495,20 @@ $emails = $conn->query($email_sql)->fetch_all(MYSQLI_ASSOC);
 
 $rooms = $conn->query("SELECT * FROM meeting_room_emails ORDER BY id")->fetch_all(MYSQLI_ASSOC);
 $depts = $conn->query("SELECT DISTINCT department FROM email_recipients ORDER BY department")->fetch_all(MYSQLI_ASSOC);
+
+// ---- Fetch Visitors ----
+$v_search      = trim($_GET['vq'] ?? '');
+$v_type_filter = trim($_GET['vtype'] ?? '');
+$v_date_from   = trim($_GET['vdate_from'] ?? '');
+$v_date_to     = trim($_GET['vdate_to'] ?? '');
+
+$visitor_sql = "SELECT * FROM visitors WHERE 1=1";
+if ($v_search)      $visitor_sql .= " AND (visitor_name LIKE '%".mysqli_real_escape_string($conn,$v_search)."%' OR company_name LIKE '%".mysqli_real_escape_string($conn,$v_search)."%')";
+if ($v_type_filter) $visitor_sql .= " AND visitor_type='".mysqli_real_escape_string($conn,$v_type_filter)."'";
+if ($v_date_from)   $visitor_sql .= " AND DATE(visit_start_datetime) >= '".mysqli_real_escape_string($conn,$v_date_from)."'";
+if ($v_date_to)     $visitor_sql .= " AND DATE(visit_start_datetime) <= '".mysqli_real_escape_string($conn,$v_date_to)."'";
+$visitor_sql .= " ORDER BY created_at DESC";
+$visitors = $conn->query($visitor_sql)->fetch_all(MYSQLI_ASSOC);
 
 $admin_username = $_SESSION['admin_user'] ?? 'admin';
 $login_time_fmt = date('d/m/Y H:i', $_SESSION['admin_login_time'] ?? time());
@@ -589,6 +629,25 @@ tbody td{padding:12px 16px;vertical-align:middle;}
 .btn-confirm-delete{background:var(--red);color:#fff;flex:2;}
 
 @media(max-width:768px){.sidebar{display:none;}.content{padding:16px;}.toolbar{flex-direction:column;align-items:stretch;}.stats-mini{flex-wrap:wrap;}}
+
+/* Visitor specific */
+.purpose-cell{max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);font-size:.82rem;}
+.icon-badge{display:inline-flex;align-items:center;gap:3px;font-size:.75rem;padding:2px 7px;border-radius:20px;margin:1px;}
+.icon-badge.yes{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.25);}
+.icon-badge.no{background:rgba(100,116,139,.08);color:#475569;border:1px solid rgba(100,116,139,.15);}
+.vip-badge{background:rgba(251,191,36,.12);color:var(--amber);border:1px solid rgba(251,191,36,.3);padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:600;}
+.normal-badge{background:rgba(56,189,248,.08);color:var(--primary);border:1px solid rgba(56,189,248,.2);padding:2px 10px;border-radius:20px;font-size:.75rem;}
+.date-range{font-size:.78rem;color:var(--muted);}
+.date-range strong{color:var(--text);font-size:.85rem;}
+.view-detail-btn{background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.25);}
+.view-detail-btn:hover{background:rgba(52,211,153,.2);}
+.modal-lg{max-width:640px;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.detail-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;}
+.detail-item .di-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+.detail-item .di-value{font-size:.9rem;color:var(--text);font-weight:500;}
+.detail-full{grid-column:1/-1;}
+
 </style>
 </head>
 <body>
@@ -654,6 +713,10 @@ tbody td{padding:12px 16px;vertical-align:middle;}
                 <button class="tab-btn <?= $tab=='rooms'?'active':'' ?>" onclick="switchTab('rooms', event)">
                     <i class="fas fa-door-open"></i> ห้องประชุม
                     <span style="background:rgba(0,0,0,.2);padding:1px 7px;border-radius:10px;font-size:.75rem;"><?= count($rooms) ?></span>
+                </button>
+                <button class="tab-btn <?= $tab=='visitors'?'active':'' ?>" onclick="switchTab('visitors', event)">
+                    <i class="fas fa-users"></i> Visitors
+                    <span style="background:rgba(0,0,0,.2);padding:1px 7px;border-radius:10px;font-size:.75rem;"><?= count($visitors) ?></span>
                 </button>
             </div>
 
@@ -800,6 +863,118 @@ tbody td{padding:12px 16px;vertical-align:middle;}
                 </div>
             </div>
 
+
+            <!-- ===== TAB: VISITORS ===== -->
+            <div id="tab-visitors" class="tab-content" <?= $tab!='visitors'?'style="display:none"':'' ?>>
+                <?php
+                $v_vip    = count(array_filter($visitors, fn($v) => $v['visitor_type'] === 'VIP'));
+                $v_normal = count($visitors) - $v_vip;
+                $v_meeting= count(array_filter($visitors, fn($v) => $v['has_meeting_room']));
+                ?>
+                <div class="stats-mini">
+                    <div class="stat-mini"><div class="num"><?= count($visitors) ?></div><div class="lbl">Visitors ทั้งหมด</div></div>
+                    <div class="stat-mini"><div class="num" style="color:var(--amber);"><?= $v_vip ?></div><div class="lbl">VIP</div></div>
+                    <div class="stat-mini"><div class="num" style="color:var(--primary);"><?= $v_normal ?></div><div class="lbl">Normal</div></div>
+                    <div class="stat-mini"><div class="num" style="color:var(--green);"><?= $v_meeting ?></div><div class="lbl">มีการจองห้อง</div></div>
+                </div>
+
+                <!-- Toolbar / Filter -->
+                <div class="toolbar">
+                    <form method="GET" style="display:flex;gap:10px;flex:1;flex-wrap:wrap;align-items:center;">
+                        <input type="hidden" name="tab" value="visitors">
+                        <input type="text" name="vq" value="<?= htmlspecialchars($v_search) ?>" class="search-box" placeholder="🔍 ค้นหาชื่อหรือบริษัท...">
+                        <select name="vtype" class="filter-select" onchange="this.form.submit()">
+                            <option value="">ทุกประเภท</option>
+                            <option value="VIP"    <?= $v_type_filter==='VIP'?'selected':'' ?>>VIP</option>
+                            <option value="Normal" <?= $v_type_filter==='Normal'?'selected':'' ?>>Normal</option>
+                        </select>
+                        <input type="date" name="vdate_from" value="<?= htmlspecialchars($v_date_from) ?>" class="search-box" style="width:160px;" title="วันที่เริ่มต้น">
+                        <input type="date" name="vdate_to"   value="<?= htmlspecialchars($v_date_to) ?>"   class="search-box" style="width:160px;" title="วันที่สิ้นสุด">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> ค้นหา</button>
+                        <?php if($v_search||$v_type_filter||$v_date_from||$v_date_to): ?>
+                        <a href="admin.php?tab=visitors" class="btn" style="background:var(--surface2);color:var(--muted);border:1px solid var(--border);">✕ ล้าง</a>
+                        <?php endif; ?>
+                    </form>
+                </div>
+
+                <!-- Table -->
+                <div class="table-card">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>บริษัท / ผู้มาติดต่อ</th>
+                                    <th>ประเภท</th>
+                                    <th>วันที่เยี่ยม</th>
+                                    <th>บริการเพิ่มเติม</th>
+                                    <th>ห้องประชุม</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php if(empty($visitors)): ?>
+                            <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted);">
+                                <i class="fas fa-users" style="display:block;font-size:1.8rem;margin-bottom:10px;"></i>ไม่พบข้อมูล Visitor
+                            </td></tr>
+                            <?php else: foreach($visitors as $i => $v): ?>
+                            <tr>
+                                <td style="color:var(--muted);width:40px;"><?= $i+1 ?></td>
+                                <td>
+                                    <div style="font-weight:600;font-size:.9rem;"><?= htmlspecialchars($v['visitor_name']) ?></div>
+                                    <div style="font-size:.78rem;color:var(--muted);margin-top:2px;"><?= htmlspecialchars($v['company_name']) ?></div>
+                                    <div class="purpose-cell" title="<?= htmlspecialchars($v['purpose']) ?>"><?= htmlspecialchars($v['purpose']) ?></div>
+                                </td>
+                                <td>
+                                    <?php if($v['visitor_type']==='VIP'): ?>
+                                        <span class="vip-badge">👑 VIP</span>
+                                    <?php else: ?>
+                                        <span class="normal-badge">Normal</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="date-range">
+                                    <strong><?= date('d/m/Y', strtotime($v['visit_start_datetime'])) ?></strong><br>
+                                    <span><?= date('H:i', strtotime($v['visit_start_datetime'])) ?></span>
+                                    <span style="margin:0 4px;">→</span>
+                                    <strong><?= date('d/m/Y', strtotime($v['visit_end_datetime'])) ?></strong><br>
+                                    <span><?= date('H:i', strtotime($v['visit_end_datetime'])) ?></span>
+                                </td>
+                                <td>
+                                    <span class="icon-badge <?= $v['welcome_board']?'yes':'no' ?>"><?= $v['welcome_board']?'✅':'—' ?> WB</span>
+                                    <span class="icon-badge <?= $v['factory_tour']?'yes':'no' ?>"><?= $v['factory_tour']?'✅':'—' ?> Tour</span>
+                                    <span class="icon-badge <?= $v['coffee_snack']?'yes':'no' ?>"><?= $v['coffee_snack']?'✅':'—' ?> ☕</span>
+                                    <span class="icon-badge <?= $v['lunch']?'yes':'no' ?>"><?= $v['lunch']?'✅':'—' ?> 🍱</span>
+                                </td>
+                                <td>
+                                    <?php if($v['has_meeting_room']): ?>
+                                        <div style="font-size:.8rem;font-weight:600;color:var(--green);"><?= htmlspecialchars($v['selected_meeting_room'] ?? '—') ?></div>
+                                        <div style="font-size:.75rem;color:var(--muted);"><?= $v['meeting_date'] ? date('d/m/Y', strtotime($v['meeting_date'])) : '' ?></div>
+                                        <div style="font-size:.75rem;color:var(--muted);"><?= $v['meeting_start'] ?> – <?= $v['meeting_end'] ?></div>
+                                    <?php else: ?>
+                                        <span style="color:var(--muted);font-size:.8rem;">—</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <div style="display:flex;gap:6px;align-items:center;">
+                                        <button class="btn btn-sm view-detail-btn" onclick='openViewVisitor(<?= json_encode($v) ?>)'>
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-edit" onclick='openEditVisitor(<?= json_encode($v) ?>)'>
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-delete" onclick='confirmDelete("visitor", <?= $v['id'] ?>, "<?= htmlspecialchars(addslashes($v['visitor_name'])) ?>")'>
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div><!-- .content -->
     </div><!-- .main -->
 </div><!-- .layout -->
@@ -930,6 +1105,123 @@ tbody td{padding:12px 16px;vertical-align:middle;}
     </div>
 </div>
 
+<!-- View Visitor Detail -->
+<div class="modal-overlay" id="modalViewVisitor">
+    <div class="modal modal-lg">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 style="margin:0;"><i class="fas fa-user" style="color:var(--green);margin-right:8px;"></i>รายละเอียด Visitor</h3>
+            <button onclick="closeModal('modalViewVisitor')" style="background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;">✕</button>
+        </div>
+        <div class="detail-grid">
+            <div class="detail-item">
+                <div class="di-label">บริษัท/หน่วยงาน</div>
+                <div class="di-value" id="vd_company"></div>
+            </div>
+            <div class="detail-item">
+                <div class="di-label">ชื่อผู้มาติดต่อ</div>
+                <div class="di-value" id="vd_name"></div>
+            </div>
+            <div class="detail-item detail-full">
+                <div class="di-label">วัตถุประสงค์</div>
+                <div class="di-value" id="vd_purpose"></div>
+            </div>
+            <div class="detail-item">
+                <div class="di-label">วันที่เริ่ม</div>
+                <div class="di-value" id="vd_start"></div>
+            </div>
+            <div class="detail-item">
+                <div class="di-label">วันที่สิ้นสุด</div>
+                <div class="di-value" id="vd_end"></div>
+            </div>
+            <div class="detail-item">
+                <div class="di-label">ประเภท</div>
+                <div class="di-value" id="vd_type"></div>
+            </div>
+            <div class="detail-item">
+                <div class="di-label">บริการเพิ่มเติม</div>
+                <div class="di-value" id="vd_services"></div>
+            </div>
+            <div class="detail-item detail-full" id="vd_meeting_block" style="display:none;">
+                <div class="di-label">ห้องประชุม</div>
+                <div class="di-value" id="vd_meeting"></div>
+            </div>
+            <div class="detail-item detail-full" id="vd_recipients_block" style="display:none;">
+                <div class="di-label">ผู้รับอีเมล</div>
+                <div class="di-value" id="vd_recipients" style="word-break:break-all;font-size:.82rem;"></div>
+            </div>
+            <div class="detail-item">
+                <div class="di-label">บันทึกเมื่อ</div>
+                <div class="di-value" id="vd_created"></div>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-cancel" onclick="closeModal('modalViewVisitor')">ปิด</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Visitor -->
+<div class="modal-overlay" id="modalEditVisitor">
+    <div class="modal modal-lg">
+        <h3><i class="fas fa-user-edit" style="color:var(--accent);margin-right:8px;"></i>แก้ไขข้อมูล Visitor</h3>
+        <form method="POST">
+            <input type="hidden" name="action" value="edit_visitor">
+            <input type="hidden" name="tab" value="visitors">
+            <input type="hidden" name="id" id="ev_id">
+            <div class="detail-grid">
+                <div class="form-group">
+                    <label>บริษัท/หน่วยงาน <span style="color:var(--red)">*</span></label>
+                    <input type="text" name="company_name" id="ev_company" required>
+                </div>
+                <div class="form-group">
+                    <label>ชื่อผู้มาติดต่อ <span style="color:var(--red)">*</span></label>
+                    <input type="text" name="visitor_name" id="ev_name" required>
+                </div>
+                <div class="form-group detail-full">
+                    <label>วัตถุประสงค์</label>
+                    <textarea name="purpose" id="ev_purpose" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>วันเวลาเริ่ม <span style="color:var(--red)">*</span></label>
+                    <input type="datetime-local" name="visit_start_datetime" id="ev_start" required>
+                </div>
+                <div class="form-group">
+                    <label>วันเวลาสิ้นสุด <span style="color:var(--red)">*</span></label>
+                    <input type="datetime-local" name="visit_end_datetime" id="ev_end" required>
+                </div>
+                <div class="form-group">
+                    <label>ประเภท</label>
+                    <select name="visitor_type" id="ev_type">
+                        <option value="Normal">Normal</option>
+                        <option value="VIP">VIP</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>บริการเพิ่มเติม</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;">
+                        <label style="display:flex;align-items:center;gap:6px;color:var(--text);font-size:.88rem;font-weight:400;">
+                            <input type="checkbox" name="welcome_board" id="ev_wb" value="1"> Welcome Board
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;color:var(--text);font-size:.88rem;font-weight:400;">
+                            <input type="checkbox" name="factory_tour" id="ev_ft" value="1"> Factory Tour
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;color:var(--text);font-size:.88rem;font-weight:400;">
+                            <input type="checkbox" name="coffee_snack" id="ev_cs" value="1"> ☕ กาแฟ-น้ำดื่ม
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;color:var(--text);font-size:.88rem;font-weight:400;">
+                            <input type="checkbox" name="lunch" id="ev_lunch" value="1"> 🍱 อาหารกลางวัน
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-cancel" onclick="closeModal('modalEditVisitor')">ยกเลิก</button>
+                <button type="submit" class="btn btn-primary btn-save"><i class="fas fa-save"></i> บันทึก</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Confirm Delete Modal -->
 <div class="modal-overlay" id="modalConfirmDelete">
     <div class="modal confirm-modal">
@@ -999,14 +1291,75 @@ function openEditRoom(d) {
 
 // ---- Confirm delete ----
 function confirmDelete(type, id, label) {
-    const action = type === 'email' ? 'delete_email' : 'delete_room';
-    const tab    = type === 'email' ? 'emails' : 'rooms';
-    document.getElementById('deleteAction').value = action;
+    const map = {
+        email:   { action: 'delete_email',   tab: 'emails' },
+        room:    { action: 'delete_room',     tab: 'rooms' },
+        visitor: { action: 'delete_visitor',  tab: 'visitors' },
+    };
+    const m = map[type];
+    document.getElementById('deleteAction').value = m.action;
     document.getElementById('deleteId').value     = id;
-    document.getElementById('deleteTab').value    = tab;
+    document.getElementById('deleteTab').value    = m.tab;
     document.getElementById('confirmDeleteMsg').textContent =
         `คุณต้องการลบ "${label}" หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`;
     openModal('modalConfirmDelete');
+}
+
+// ---- Visitor functions ----
+function fmtDT(s) {
+    if (!s) return '—';
+    const d = new Date(s.replace(' ', 'T'));
+    return d.toLocaleDateString('th-TH', {day:'2-digit',month:'2-digit',year:'numeric'})
+        + ' ' + d.toLocaleTimeString('th-TH', {hour:'2-digit',minute:'2-digit'});
+}
+
+function openViewVisitor(d) {
+    document.getElementById('vd_company').textContent  = d.company_name || '—';
+    document.getElementById('vd_name').textContent     = d.visitor_name || '—';
+    document.getElementById('vd_purpose').textContent  = d.purpose || '—';
+    document.getElementById('vd_start').textContent    = fmtDT(d.visit_start_datetime);
+    document.getElementById('vd_end').textContent      = fmtDT(d.visit_end_datetime);
+    document.getElementById('vd_type').textContent     = d.visitor_type === 'VIP' ? '👑 VIP' : 'Normal';
+    document.getElementById('vd_created').textContent  = fmtDT(d.created_at);
+
+    const svc = [];
+    if (parseInt(d.welcome_board)) svc.push('✅ Welcome Board');
+    if (parseInt(d.factory_tour))  svc.push('✅ Factory Tour');
+    if (parseInt(d.coffee_snack))  svc.push('✅ กาแฟ-น้ำดื่ม');
+    if (parseInt(d.lunch))         svc.push('✅ อาหารกลางวัน');
+    document.getElementById('vd_services').textContent = svc.length ? svc.join('  |  ') : '— ไม่มีบริการเพิ่มเติม';
+
+    const meetBlock = document.getElementById('vd_meeting_block');
+    if (parseInt(d.has_meeting_room)) {
+        document.getElementById('vd_meeting').innerHTML =
+            `<strong>${d.selected_meeting_room || '—'}</strong><br>
+             วันที่: ${d.meeting_date || '—'} &nbsp;|&nbsp; เวลา: ${d.meeting_start || '—'} – ${d.meeting_end || '—'}`;
+        meetBlock.style.display = '';
+    } else { meetBlock.style.display = 'none'; }
+
+    const recBlock = document.getElementById('vd_recipients_block');
+    const rec = [d.required_recipients, d.cc_recipients].filter(Boolean).join(', ');
+    if (rec) {
+        document.getElementById('vd_recipients').textContent = rec;
+        recBlock.style.display = '';
+    } else { recBlock.style.display = 'none'; }
+
+    openModal('modalViewVisitor');
+}
+
+function openEditVisitor(d) {
+    document.getElementById('ev_id').value      = d.id;
+    document.getElementById('ev_company').value = d.company_name;
+    document.getElementById('ev_name').value    = d.visitor_name;
+    document.getElementById('ev_purpose').value = d.purpose || '';
+    document.getElementById('ev_start').value   = (d.visit_start_datetime || '').replace(' ', 'T').slice(0,16);
+    document.getElementById('ev_end').value     = (d.visit_end_datetime   || '').replace(' ', 'T').slice(0,16);
+    document.getElementById('ev_type').value    = d.visitor_type || 'Normal';
+    document.getElementById('ev_wb').checked    = parseInt(d.welcome_board) === 1;
+    document.getElementById('ev_ft').checked    = parseInt(d.factory_tour)  === 1;
+    document.getElementById('ev_cs').checked    = parseInt(d.coffee_snack)  === 1;
+    document.getElementById('ev_lunch').checked = parseInt(d.lunch)         === 1;
+    openModal('modalEditVisitor');
 }
 </script>
 </body>
