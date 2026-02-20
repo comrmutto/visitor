@@ -665,5 +665,141 @@ function createEmailContent($visitor_data, $lang = 'th') {
 </div>
 </body>
 </html>";
+
+} // Added closing brace here
+
+// ============================================================
+// ฟังก์ชันส่งอีเมลแจ้ง department เฉพาะ (IT / GA)
+// ============================================================
+function sendDepartmentNotification(array $to_emails, array $visitor_data, string $dept, string $lang = 'th') {
+    if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) return false;
+
+    global $email_translations;
+    $t = $email_translations[$lang];
+
+    $company_name  = htmlspecialchars($visitor_data['company_name'] ?? '');
+    $visitor_name  = htmlspecialchars($visitor_data['visitor_name'] ?? '');
+    $purpose       = htmlspecialchars($visitor_data['purpose'] ?? '');
+    $welcome_board = !empty($visitor_data['welcome_board']);
+    $factory_tour  = !empty($visitor_data['factory_tour']);
+    $coffee_snack  = !empty($visitor_data['coffee_snack']);
+    $lunch         = !empty($visitor_data['lunch']);
+
+    $start_fmt = !empty($visitor_data['visit_start_datetime'])
+        ? date('d/m/Y H:i', strtotime($visitor_data['visit_start_datetime'])) : '—';
+    $end_fmt   = !empty($visitor_data['visit_end_datetime'])
+        ? date('d/m/Y H:i', strtotime($visitor_data['visit_end_datetime'])) : '—';
+
+    if ($dept === 'IT') {
+        $dept_title = ($lang === 'th') ? 'แผนก IT — กรุณาเตรียมการ' : 'IT Dept — Please Prepare';
+        $items_html = '';
+        if ($welcome_board) $items_html .= '<li>✅ Welcome Board</li>';
+        if ($factory_tour)  $items_html .= '<li>✅ Factory Tour</li>';
+        $dept_color = '#1B4D8A';
+    } else {
+        $dept_title = ($lang === 'th') ? 'แผนก GA — กรุณาเตรียมการ' : 'GA Dept — Please Prepare';
+        $items_html = '';
+        if ($coffee_snack) $items_html .= '<li>✅ ' . ($lang === 'th' ? 'กาแฟ-น้ำดื่ม (Coffee & Drinks)' : 'Coffee & Drinks') . '</li>';
+        if ($lunch)        $items_html .= '<li>✅ ' . ($lang === 'th' ? 'อาหารกลางวัน (Lunch)' : 'Lunch') . '</li>';
+        $dept_color = '#0B6B4A';
+    }
+
+    $subject = ($lang === 'th')
+        ? "[{$dept}] เตรียมการต้อนรับผู้มาติดต่อ: {$visitor_name}"
+        : "[{$dept}] Visitor Preparation Required: {$visitor_name}";
+
+    $lbl_company    = $lang === 'th' ? 'บริษัท/หน่วยงาน' : 'Company';
+    $lbl_visitor    = $lang === 'th' ? 'ชื่อผู้มาติดต่อ' : 'Visitor Name';
+    $lbl_purpose    = $lang === 'th' ? 'วัตถุประสงค์' : 'Purpose';
+    $lbl_start      = $lang === 'th' ? 'วันที่เริ่ม' : 'Start';
+    $lbl_end        = $lang === 'th' ? 'วันที่สิ้นสุด' : 'End';
+    $lbl_visitor_info = $lang === 'th' ? 'ข้อมูลผู้มาติดต่อ' : 'Visitor Information';
+    $lbl_prepare    = $lang === 'th' ? 'รายการที่ต้องเตรียม' : 'Items to Prepare';
+    $lbl_subtitle   = $lang === 'th' ? 'มีผู้มาติดต่อที่ต้องการการเตรียมการจากท่าน' : 'A visitor requires your preparation';
+    $lbl_auto       = $lang === 'th' ? 'อีเมลนี้ส่งโดยอัตโนมัติจากระบบ VMS' : 'This email is automatically sent by VMS System';
+    $sent_time = date('d/m/Y H:i:s');
+
+$body = "<!DOCTYPE html>
+<html lang='{$lang}'>
+<head>
+<meta charset='UTF-8'>
+<style>
+/* ตั้งค่าพื้นฐานเผื่ออีเมลบางระบบอ่านค่าได้ */
+body { font-family: 'Sarabun', 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background-color: #e2e8f0; }
+.lbl { font-weight: bold; color: #4a5568; width: 140px; vertical-align: top; padding-bottom: 12px; }
+.val { color: #0f172a; padding-bottom: 12px; }
+ul { margin: 10px 0 0 20px; padding: 0; color: #047857; font-size: 16px; }
+li { margin-bottom: 8px; }
+</style>
+</head>
+<body style='background-color: #e2e8f0; padding: 20px;'>
+
+<table align='center' width='100%' style='max-width: 600px; background-color: #f1f5f9; border-radius: 12px; border: 1px solid #cbd5e1; border-spacing: 0; border-collapse: separate; overflow: hidden; margin: 0 auto;' cellpadding='0' cellspacing='0'>
+    
+    <tr>
+        <td bgcolor='#ffffff' style='padding: 25px 30px; text-align: center; background-color: #ffffff; border-bottom: 3px dashed #cbd5e1;'>
+            <h2 style='margin: 0; font-size: 26px; color: #1e293b;'>🔔 {$dept_title}</h2>
+            <p style='margin: 8px 0 0; color: #64748b; font-size: 16px;'>{$lbl_subtitle}</p>
+        </td>
+    </tr>
+    
+    <tr>
+        <td bgcolor='#f1f5f9' style='padding: 30px; background-color: #f1f5f9;'>
+            
+            <table width='100%' style='background-color: #ffffff; border-radius: 8px; border-left: 6px solid #1e293b; margin-bottom: 25px; border-spacing: 0; border-collapse: separate; box-shadow: 0 2px 4px rgba(0,0,0,0.02);' cellpadding='0' cellspacing='0'>
+                <tr>
+                    <td bgcolor='#ffffff' style='padding: 20px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;'>
+                        <h3 style='margin: 0 0 15px; font-size: 20px; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;'>📋 {$lbl_visitor_info}</h3>
+                        
+                        <table width='100%' cellpadding='0' cellspacing='0' style='font-size: 16px;'>
+                            <tr>
+                                <td class='lbl'>{$lbl_company}:</td>
+                                <td class='val'><strong>{$company_name}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class='lbl'>{$lbl_visitor}:</td>
+                                <td class='val'><strong>{$visitor_name}</strong></td>
+                            </tr>
+                            <tr>
+                                <td class='lbl'>{$lbl_purpose}:</td>
+                                <td class='val'>{$purpose}</td>
+                            </tr>
+                            <tr>
+                                <td class='lbl'>{$lbl_start}:</td>
+                                <td class='val'>{$start_fmt}</td>
+                            </tr>
+                            <tr>
+                                <td class='lbl' style='padding-bottom: 0;'>{$lbl_end}:</td>
+                                <td class='val' style='padding-bottom: 0;'>{$end_fmt}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <table width='100%' style='background-color: #ffffff; border-radius: 8px; border-left: 6px solid #1e293b; border-spacing: 0; border-collapse: separate; box-shadow: 0 2px 4px rgba(0,0,0,0.02);' cellpadding='0' cellspacing='0'>
+                <tr>
+                    <td bgcolor='#ffffff' style='padding: 20px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;'>
+                        <h3 style='margin: 0 0 15px; font-size: 20px; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;'>📌 {$lbl_prepare}</h3>
+                        <div style='font-size: 16px; color: #047857;'>
+                            <ul>{$items_html}</ul>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+        </td>
+    </tr>
+    
+    <tr>
+        <td bgcolor='#ffffff' style='padding: 15px; text-align: center; background-color: #ffffff; color: #64748b; font-size: 14px; border-top: 3px dashed #cbd5e1;'>
+            {$lbl_auto} | {$sent_time}
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>";
+
+    return _sendSMTPWithCC($to_emails, [], $subject, $body, null, $lang);
 }
-?>

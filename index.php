@@ -102,12 +102,12 @@ if ($email_result) {
             <div class="form-row">
                 <div class="form-group">
                     <label class="static-label"><span data-i18n="start_time">เวลาเริ่มเข้าเยี่ยม</span> <span class="required">*</span></label>
-                    <input type="datetime-local" id="visit_start_datetime" name="visit_start_datetime" required onchange="validateDates(); updateMeetingDate();">
+                    <input type="datetime-local" id="visit_start_datetime" name="visit_start_datetime" required onchange="updateMeetingDate();">
                 </div>
 
                 <div class="form-group">
                     <label class="static-label"><span data-i18n="end_time">เวลาสิ้นสุดเข้าเยี่ยม</span> <span class="required">*</span></label>
-                    <input type="datetime-local" id="visit_end_datetime" name="visit_end_datetime" required onchange="validateDates();">
+                    <input type="datetime-local" id="visit_end_datetime" name="visit_end_datetime" required>
                 </div>
             </div>
             
@@ -275,17 +275,7 @@ function setDefaultDateTime() {
 }
 // ฟังก์ชันตรวจสอบวันที่ (เพิ่มใน inline script ด้วย)
 function validateDates() {
-    const startDate = document.getElementById('visit_start_datetime');
-    const endDate = document.getElementById('visit_end_datetime');
-    
-    if (startDate.value && endDate.value) {
-        // เปรียบเทียบ string โดยตรง (YYYY-MM-DDTHH:MM) แทน new Date()
-        // แก้ปัญหา Chrome parse datetime ผิดเมื่อชั่วโมงเป็น 10, 11, 12
-        if (startDate.value > endDate.value) {
-            alert('วันที่สิ้นสุดต้องมากกว่าหรือเท่ากับวันที่เริ่ม');
-            endDate.value = startDate.value;
-        }
-    }
+    // ไม่ทำอะไรระหว่างพิมพ์ — validate เฉพาะตอน submit (ดู submit handler)
     updateMeetingDate();
 }
         // ฟังก์ชันอัปเดตวันที่จองห้องประชุม
@@ -302,6 +292,30 @@ function validateDates() {
         // เรียกใช้เมื่อโหลดหน้า
         document.addEventListener('DOMContentLoaded', function() {
             setDefaultDateTime();
+
+            // validate วันที่เฉพาะตอน submit เท่านั้น ไม่ยุ่งกับ input ระหว่างพิมพ์
+            document.getElementById('visitorForm').addEventListener('submit', function(e) {
+                const startEl = document.getElementById('visit_start_datetime');
+                const endEl   = document.getElementById('visit_end_datetime');
+                const startMs = startEl.valueAsNumber;
+                const endMs   = endEl.valueAsNumber;
+
+                if (!isNaN(startMs) && !isNaN(endMs) && endMs < startMs) {
+                    e.preventDefault();
+                    let errEl = document.getElementById('date_error_msg');
+                    if (!errEl) {
+                        errEl = document.createElement('p');
+                        errEl.id = 'date_error_msg';
+                        errEl.style.cssText = 'color:#e74c3c;font-size:13px;margin:4px 0 0 0;';
+                        endEl.parentNode.appendChild(errEl);
+                    }
+                    errEl.textContent = '⚠️ วันที่สิ้นสุดต้องมากกว่าหรือเท่ากับวันที่เริ่ม';
+                    endEl.focus();
+                } else {
+                    const errEl = document.getElementById('date_error_msg');
+                    if (errEl) errEl.textContent = '';
+                }
+            });
         });
 
         // Inline fix for toggle

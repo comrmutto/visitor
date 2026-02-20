@@ -135,8 +135,36 @@ try {
         'language'             => $language
     ];
 
-    // Send Email
+    // Send Email (main)
     $email_sent = sendVisitorEmail($email_data);
+
+    // ส่งอีเมลหา IT department ถ้าเลือก Welcome Board หรือ Factory Tour
+    if ($welcome_board || $factory_tour) {
+        $it_result = $conn->query("SELECT email FROM email_recipients WHERE department = 'IT' AND is_active = 1");
+        $it_emails = [];
+        if ($it_result) {
+            while ($row = $it_result->fetch_assoc()) {
+                $it_emails[] = $row['email'];
+            }
+        }
+        if (!empty($it_emails)) {
+            sendDepartmentNotification($it_emails, $email_data, 'IT', $language);
+        }
+    }
+
+    // ส่งอีเมลหา GA department ถ้าเลือก Coffee/Snack หรือ Lunch
+    if ($coffee_snack || $lunch) {
+        $ga_result = $conn->query("SELECT email FROM email_recipients WHERE department = 'GA' AND is_active = 1");
+        $ga_emails = [];
+        if ($ga_result) {
+            while ($row = $ga_result->fetch_assoc()) {
+                $ga_emails[] = $row['email'];
+            }
+        }
+        if (!empty($ga_emails)) {
+            sendDepartmentNotification($ga_emails, $email_data, 'GA', $language);
+        }
+    }
 
     // Log Email สำหรับ Required Recipients
     if (!empty($required_emails) || ($has_meeting_room && $selected_meeting_room)) {
