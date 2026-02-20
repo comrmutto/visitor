@@ -669,7 +669,7 @@ function createEmailContent($visitor_data, $lang = 'th') {
 } // Added closing brace here
 
 // ============================================================
-// ฟังก์ชันส่งอีเมลแจ้ง department เฉพาะ (IT / GA)
+// ฟังก์ชันส่งอีเมลแจ้ง department เฉพาะ (IT / GA / TS)
 // ============================================================
 function sendDepartmentNotification(array $to_emails, array $visitor_data, string $dept, string $lang = 'th') {
     if (!class_exists('PHPMailer\\PHPMailer\\PHPMailer')) return false;
@@ -690,13 +690,35 @@ function sendDepartmentNotification(array $to_emails, array $visitor_data, strin
     $end_fmt   = !empty($visitor_data['visit_end_datetime'])
         ? date('d/m/Y H:i', strtotime($visitor_data['visit_end_datetime'])) : '—';
 
+    // 🌟 ส่วนที่เพิ่มใหม่: ถ้าเป็น GA ให้เพิ่มอีเมลแผนก TS เข้าไปด้วย
+    if ($dept === 'GA') {
+        require_once 'config.php';
+        global $conn;
+        if ($conn) {
+            $ts_query = "SELECT email FROM email_recipients WHERE department = 'TS' AND is_active = 1";
+            $ts_result = $conn->query($ts_query);
+            if ($ts_result) {
+                while ($row = $ts_result->fetch_assoc()) {
+                    $ts_email = trim($row['email']);
+                    if (!empty($ts_email) && !in_array($ts_email, $to_emails)) {
+                        $to_emails[] = $ts_email; // นำอีเมล TS เพิ่มเข้าไปในกลุ่มผู้รับ
+                    }
+                }
+            }
+        }
+        $dept_display = 'GA / TS'; // เปลี่ยนชื่อแสดงผล
+    } else {
+        $dept_display = $dept;
+    }
+
+    // 🌟 กำหนดหัวข้อตามแผนก
     if ($dept === 'IT') {
         $dept_title = ($lang === 'th') ? 'แผนก IT — กรุณาเตรียมการ' : 'IT Dept — Please Prepare';
         $items_html = '';
         if ($welcome_board) $items_html .= '<li>✅ Welcome Board</li>';
         if ($factory_tour)  $items_html .= '<li>✅ Factory Tour</li>';
         $dept_color = '#1B4D8A';
-    } else {
+    } else { // กรณีเป็น GA / TS
         $dept_title = ($lang === 'th') ? 'แผนก GA — กรุณาเตรียมการ' : 'GA Dept — Please Prepare';
         $items_html = '';
         if ($coffee_snack) $items_html .= '<li>✅ ' . ($lang === 'th' ? 'กาแฟ-น้ำดื่ม (Coffee & Drinks)' : 'Coffee & Drinks') . '</li>';
@@ -704,9 +726,10 @@ function sendDepartmentNotification(array $to_emails, array $visitor_data, strin
         $dept_color = '#0B6B4A';
     }
 
+    // 🌟 ตั้งชื่อ Subject ให้ครอบคลุม
     $subject = ($lang === 'th')
-        ? "[{$dept}] เตรียมการต้อนรับผู้มาติดต่อ: {$visitor_name}"
-        : "[{$dept}] Visitor Preparation Required: {$visitor_name}";
+        ? "[{$dept_display}] เตรียมการต้อนรับผู้มาติดต่อ: {$visitor_name}"
+        : "[{$dept_display}] Visitor Preparation Required: {$visitor_name}";
 
     $lbl_company    = $lang === 'th' ? 'บริษัท/หน่วยงาน' : 'Company';
     $lbl_visitor    = $lang === 'th' ? 'ชื่อผู้มาติดต่อ' : 'Visitor Name';
@@ -800,6 +823,11 @@ li { margin-bottom: 8px; }
 
 </body>
 </html>";
+
+    // ตรวจสอบก่อนส่งเพื่อไม่ให้ระบบพยายามส่งอีเมลถ้าไม่มีผู้รับ
+    if (empty($to_emails)) {
+        return false;
+    }
 
     return _sendSMTPWithCC($to_emails, [], $subject, $body, null, $lang);
 }
