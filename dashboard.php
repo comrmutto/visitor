@@ -193,6 +193,34 @@ tbody td { padding:13px 16px; color:var(--text); vertical-align:middle; }
 .chip-no { background:rgba(100,116,139,.08); color:var(--muted); }
 .no-data { text-align:center; padding:48px; color:var(--muted); }
 
+/* Date badges (แก้ไขขนาดให้พอดี) */
+.date-badge {
+    display: flex; /* เปลี่ยนเป็น flex ธรรมดาจัดให้เต็ม block ภายใน <td> */
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: .78rem;
+    white-space: nowrap;
+    width: max-content; /* ✅ แก้ไข: ให้กว้างพอดีกับเนื้อหา */
+    min-width: 130px; /* ✅ เพิ่ม min-width ป้องกันโดนบีบ */
+    margin-bottom: 5px;
+}
+.date-badge:last-child { margin-bottom: 0; }
+.date-badge i { font-size: .8rem; flex-shrink: 0; }
+.date-badge-date { font-weight: 600; line-height: 1.3; }
+.date-badge-time { font-size: .72rem; opacity: .8; line-height: 1.2; }
+.date-start {
+    background: rgba(52,211,153,.12);
+    color: var(--green);
+    border: 1px solid rgba(52,211,153,.25);
+}
+.date-end {
+    background: rgba(248,113,113,.1);
+    color: var(--red);
+    border: 1px solid rgba(248,113,113,.25);
+}
+
 /* --- SWITCHER STYLES (Theme + Language) --- */
 .control-group {
     display: flex;
@@ -324,7 +352,6 @@ input:checked + .slider-lang:before {
             
             <div style="display:flex; align-items:center;">
                 <div class="control-group">
-                    <!-- Theme Switcher -->
                     <div class="theme-switch-container">
                         <i class="fas fa-sun theme-icon" id="themeIconLight"></i>
                         <label class="switch-theme">
@@ -334,7 +361,6 @@ input:checked + .slider-lang:before {
                         <i class="fas fa-moon theme-icon" id="themeIconDark"></i>
                     </div>
 
-                    <!-- Language Switcher -->
                     <div class="lang-switch-container">
                         <span class="lang-text" id="langLabel_TH">TH</span>
                         <label class="switch-lang">
@@ -433,15 +459,14 @@ input:checked + .slider-lang:before {
                     <table>
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th data-i18n="col_company">บริษัท/หน่วยงาน</th>
-                                <th data-i18n="col_name">ชื่อผู้มาติดต่อ</th>
-                                <th data-i18n="col_purpose">วัตถุประสงค์</th>
-                                <th data-i18n="col_start">วันที่เริ่ม</th>
-                                <th data-i18n="col_end">วันที่สิ้นสุด</th>
-                                <th data-i18n="col_type">ประเภท</th>
-                                <th data-i18n="col_service">บริการเพิ่มเติม</th>
-                                <th data-i18n="col_room">ห้องประชุม</th>
+                                <th style="width: 2%;">#</th>
+                                <th data-i18n="col_company" style="width: 18%;">บริษัท/หน่วยงาน</th>
+                                <th data-i18n="col_name" style="width: 15%;">ชื่อผู้มาติดต่อ</th>
+                                <th data-i18n="col_purpose">วัตถุประสงค์</th> 
+                                <th data-i18n="col_date" style="width: 1%; white-space: nowrap;">วันที่เยี่ยม</th>
+                                <th data-i18n="col_type" style="width: 5%;">ประเภท</th>
+                                <th data-i18n="col_service" style="width: 15%;">บริการเพิ่มเติม</th>
+                                <th data-i18n="col_room" style="width: 10%;">ห้องประชุม</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -450,15 +475,35 @@ input:checked + .slider-lang:before {
                                 <td style="color:var(--muted);"><?= $i+1 ?></td>
                                 <td style="font-weight:500;"><?= htmlspecialchars($v['company_name']) ?></td>
                                 <td><?= htmlspecialchars($v['visitor_name']) ?></td>
-                                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= htmlspecialchars($v['purpose']) ?>"><?= htmlspecialchars($v['purpose']) ?></td>
-                                <td style="white-space:nowrap;"><?= date('d/m/Y H:i', strtotime($v['visit_start_datetime'])) ?></td>
-                                <td style="white-space:nowrap;"><?= date('d/m/Y H:i', strtotime($v['visit_end_datetime'])) ?></td>
+                                
+                                <td style="max-width:400px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<?= htmlspecialchars($v['purpose']) ?>">
+                                    <?= htmlspecialchars($v['purpose']) ?>
+                                </td>
+                                
+                                <td style="width: 1%; white-space: nowrap;">
+                                    <div style="display:flex; flex-direction:column;">
+                                        <div class="date-badge date-start">
+                                            <i class="fas fa-calendar-plus"></i>
+                                            <div>
+                                                <div class="date-badge-date"><?= date('d/m/Y', strtotime($v['visit_start_datetime'])) ?></div>
+                                                <div class="date-badge-time"><?= date('H:i', strtotime($v['visit_start_datetime'])) ?></div>
+                                            </div>
+                                        </div>
+                                        <div class="date-badge date-end">
+                                            <i class="fas fa-calendar-minus"></i>
+                                            <div>
+                                                <div class="date-badge-date"><?= date('d/m/Y', strtotime($v['visit_end_datetime'])) ?></div>
+                                                <div class="date-badge-time"><?= date('H:i', strtotime($v['visit_end_datetime'])) ?></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
                                 <td><span class="badge <?= $v['visitor_type']=='VIP'?'badge-vip':'badge-normal' ?>"><?= $v['visitor_type']=='VIP'?'👑 ':'' ?><?= $v['visitor_type'] ?></span></td>
                                 <td>
-                                    <?php if($v['welcome_board']): ?><span class="chip-sm chip-yes" data-i18n="col_welcome">🪧 Welcome</span><?php endif; ?>
-                                    <?php if($v['factory_tour']): ?><span class="chip-sm chip-yes" data-i18n="col_tour">🏭 Tour</span><?php endif; ?>
-                                    <?php if($v['coffee_snack']): ?><span class="chip-sm chip-yes" data-i18n="col_coffee">☕ Coffee</span><?php endif; ?>
-                                    <?php if($v['lunch']): ?><span class="chip-sm chip-yes" data-i18n="col_lunch">🍱 Lunch</span><?php endif; ?>
+                                    <?php if($v['welcome_board']): ?><span class="chip-sm chip-yes"><span class="chip-icon">🪧</span> <span data-i18n="col_welcome">ป้ายต้อนรับ</span></span><?php endif; ?><br>
+                                    <?php if($v['factory_tour']): ?><span class="chip-sm chip-yes"><span class="chip-icon">🏭</span> <span data-i18n="col_tour">เยี่ยมชมโรงงาน</span></span><?php endif; ?><br>
+                                    <?php if($v['coffee_snack']): ?><span class="chip-sm chip-yes"><span class="chip-icon">☕</span> <span data-i18n="col_coffee">กาแฟ-น้ำดื่ม</span></span><?php endif; ?><br>
+                                    <?php if($v['lunch']): ?><span class="chip-sm chip-yes"><span class="chip-icon">🍱</span> <span data-i18n="col_lunch">อาหารกลางวัน</span></span><?php endif; ?>
                                     <?php if(!$v['welcome_board'] && !$v['factory_tour'] && !$v['coffee_snack'] && !$v['lunch']): ?><span style="color:var(--muted);font-size:.8rem;">—</span><?php endif; ?>
                                 </td>
                                 <td>
@@ -473,8 +518,7 @@ input:checked + .slider-lang:before {
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
-                    </table>
-                </div>
+                    </table>                </div>
                 <?php endif; ?>
             </div>
         </div>
@@ -506,12 +550,13 @@ const translations = {
         col_purpose: "วัตถุประสงค์",
         col_start: "วันที่เริ่ม",
         col_end: "วันที่สิ้นสุด",
+        col_date: "วันที่เยี่ยม",
         col_type: "ประเภท",
         col_service: "บริการเพิ่มเติม",
         col_room: "ห้องประชุม",
         col_welcome: "ป้ายต้อนรับ",
-        col_tour: "เยี่ยมชมโรรงาน",
-        col_coffee: "กาแฟ",
+        col_tour: "เยี่ยมชมโรงงาน",
+        col_coffee: "กาแฟ-น้ำดื่ม",
         col_lunch: "อาหารกลางวัน",
         month_1: "ม.ค.", month_2: "ก.พ.", month_3: "มี.ค.", month_4: "เม.ย.", month_5: "พ.ค.", month_6: "มิ.ย.",
         month_7: "ก.ค.", month_8: "ส.ค.", month_9: "ก.ย.", month_10: "ต.ค.", month_11: "พ.ย.", month_12: "ธ.ค.",
@@ -541,12 +586,13 @@ const translations = {
         col_purpose: "Purpose",
         col_start: "Start Date",
         col_end: "End Date",
+        col_date: "Visit Dates",
         col_type: "Type",
         col_service: "Extra Services",
         col_room: "Meeting Room",
-        col_welcome: "Welcome Sign",
-        col_tour: "Tour",
-        col_coffee: "Coffee & Snacks",
+        col_welcome: "Welcome Board",
+        col_tour: "Factory Tour",
+        col_coffee: "Coffee & Drinks",
         col_lunch: "Lunch",
         month_1: "Jan", month_2: "Feb", month_3: "Mar", month_4: "Apr", month_5: "May", month_6: "Jun",
         month_7: "Jul", month_8: "Aug", month_9: "Sep", month_10: "Oct", month_11: "Nov", month_12: "Dec",
@@ -692,7 +738,7 @@ let barChartInstance = new Chart(document.getElementById('barChart'), {
     }
 });
 
-// Pie chart
+// Pie chart (✅ แก้ไขเอาเส้นขอบออก)
 const totalVip    = vipCounts.reduce((a,b)=>a+b,0);
 const totalNormal = normalCounts.reduce((a,b)=>a+b,0);
 new Chart(document.getElementById('pieChart'), {
@@ -702,8 +748,7 @@ new Chart(document.getElementById('pieChart'), {
         datasets: [{
             data: [totalNormal, totalVip],
             backgroundColor: ['rgba(56,189,248,.7)', 'rgba(251,191,36,.7)'],
-            borderColor: ['var(--bg)'],
-            borderWidth: 3,
+            // เอา borderColor และ borderWidth ออกเพื่อให้ไม่มีเส้นขอบ
             hoverOffset: 8
         }]
     },
