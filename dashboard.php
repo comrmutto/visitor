@@ -457,7 +457,9 @@ input:checked + .slider-lang:before {
                                 <td>
                                     <?php if($v['welcome_board']): ?><span class="chip-sm chip-yes">🪧 Welcome</span><?php endif; ?>
                                     <?php if($v['factory_tour']): ?><span class="chip-sm chip-yes">🏭 Tour</span><?php endif; ?>
-                                    <?php if(!$v['welcome_board'] && !$v['factory_tour']): ?><span style="color:var(--muted);font-size:.8rem;">—</span><?php endif; ?>
+                                    <?php if($v['coffee_snack']): ?><span class="chip-sm chip-yes">☕ กาแฟ-น้ำดื่ม</span><?php endif; ?>
+                                    <?php if($v['lunch']): ?><span class="chip-sm chip-yes">🍱 อาหารกลางวัน</span><?php endif; ?>
+                                    <?php if(!$v['welcome_board'] && !$v['factory_tour'] && !$v['coffee_snack'] && !$v['lunch']): ?><span style="color:var(--muted);font-size:.8rem;">—</span><?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if($v['has_meeting_room']): ?>
