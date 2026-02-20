@@ -455,10 +455,10 @@ input:checked + .slider-lang:before {
                                 <td style="white-space:nowrap;"><?= date('d/m/Y H:i', strtotime($v['visit_end_datetime'])) ?></td>
                                 <td><span class="badge <?= $v['visitor_type']=='VIP'?'badge-vip':'badge-normal' ?>"><?= $v['visitor_type']=='VIP'?'👑 ':'' ?><?= $v['visitor_type'] ?></span></td>
                                 <td>
-                                    <?php if($v['welcome_board']): ?><span class="chip-sm chip-yes">🪧 Welcome</span><?php endif; ?>
-                                    <?php if($v['factory_tour']): ?><span class="chip-sm chip-yes">🏭 Tour</span><?php endif; ?>
-                                    <?php if($v['coffee_snack']): ?><span class="chip-sm chip-yes">☕ กาแฟ-น้ำดื่ม</span><?php endif; ?>
-                                    <?php if($v['lunch']): ?><span class="chip-sm chip-yes">🍱 อาหารกลางวัน</span><?php endif; ?>
+                                    <?php if($v['welcome_board']): ?><span class="chip-sm chip-yes" data-i18n="col_welcome">🪧 Welcome</span><?php endif; ?>
+                                    <?php if($v['factory_tour']): ?><span class="chip-sm chip-yes" data-i18n="col_tour">🏭 Tour</span><?php endif; ?>
+                                    <?php if($v['coffee_snack']): ?><span class="chip-sm chip-yes" data-i18n="col_coffee">☕ Coffee</span><?php endif; ?>
+                                    <?php if($v['lunch']): ?><span class="chip-sm chip-yes" data-i18n="col_lunch">🍱 Lunch</span><?php endif; ?>
                                     <?php if(!$v['welcome_board'] && !$v['factory_tour'] && !$v['coffee_snack'] && !$v['lunch']): ?><span style="color:var(--muted);font-size:.8rem;">—</span><?php endif; ?>
                                 </td>
                                 <td>
@@ -509,6 +509,10 @@ const translations = {
         col_type: "ประเภท",
         col_service: "บริการเพิ่มเติม",
         col_room: "ห้องประชุม",
+        col_welcome: "ป้ายต้อนรับ",
+        col_tour: "เยี่ยมชมโรรงาน",
+        col_coffee: "กาแฟ",
+        col_lunch: "อาหารกลางวัน",
         month_1: "ม.ค.", month_2: "ก.พ.", month_3: "มี.ค.", month_4: "เม.ย.", month_5: "พ.ค.", month_6: "มิ.ย.",
         month_7: "ก.ค.", month_8: "ส.ค.", month_9: "ก.ย.", month_10: "ต.ค.", month_11: "พ.ย.", month_12: "ธ.ค.",
         month_full_1: "มกราคม", month_full_2: "กุมภาพันธ์", month_full_3: "มีนาคม", month_full_4: "เมษายน",
@@ -540,6 +544,10 @@ const translations = {
         col_type: "Type",
         col_service: "Extra Services",
         col_room: "Meeting Room",
+        col_welcome: "Welcome Sign",
+        col_tour: "Tour",
+        col_coffee: "Coffee & Snacks",
+        col_lunch: "Lunch",
         month_1: "Jan", month_2: "Feb", month_3: "Mar", month_4: "Apr", month_5: "May", month_6: "Jun",
         month_7: "Jul", month_8: "Aug", month_9: "Sep", month_10: "Oct", month_11: "Nov", month_12: "Dec",
         month_full_1: "January", month_full_2: "February", month_full_3: "March", month_full_4: "April",
