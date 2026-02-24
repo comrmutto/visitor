@@ -493,7 +493,11 @@ session_start();
                 <span data-i18n="manual_title">คู่มือการใช้งาน VMS System</span>
             </h1>
             <p data-i18n="manual_subtitle">Visitor Management System - ระบบจัดการผู้มาติดต่อและจองห้องประชุม</p>
-            <span class="version" data-i18n="version">เวอร์ชัน 2.0.0 | อัพเดตล่าสุด: กุมภาพันธ์ 2569</span>
+            <span class="version">
+                <span data-i18n="version_label">เวอร์ชัน</span> 
+                <span data-i18n="version_number">2.0.0</span> | 
+                <span data-i18n="version_date">อัพเดตล่าสุด: กุมภาพันธ์ 2569</span>
+            </span>
         </div>
 
         <!-- Translation Data -->
@@ -503,7 +507,9 @@ session_start();
                     back_to_system: "กลับสู่ระบบ",
                     manual_title: "คู่มือการใช้งาน VMS System",
                     manual_subtitle: "Visitor Management System - ระบบจัดการผู้มาติดต่อและจองห้องประชุม",
-                    version: "เวอร์ชัน 2.0.0 | อัพเดตล่าสุด: กุมภาพันธ์ 2569",
+                    version_label: "เวอร์ชัน",
+                    version_number: "2.0.0",
+                    version_date: "อัพเดตล่าสุด: กุมภาพันธ์ 2569",
                     toc_title: "สารบัญ",
                     overview: "ภาพรวมระบบ",
                     getting_started: "เริ่มต้นใช้งาน",
@@ -668,7 +674,9 @@ session_start();
                     back_to_system: "Back to System",
                     manual_title: "VMS System User Manual",
                     manual_subtitle: "Visitor Management System - Manage visitors and meeting room bookings",
-                    version: "Version 2.0.0 | Last updated: February 2026",
+                    version_label: "Version",
+                    version_number: "2.0.0", 
+                    version_date: "Last updated: February 2026",
                     toc_title: "Table of Contents",
                     overview: "System Overview",
                     getting_started: "Getting Started",
