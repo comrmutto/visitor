@@ -25,6 +25,9 @@ const translations = {
         need_coffee: "ต้องการกาแฟ-น้ำดื่ม?",
         need_lunch: "ต้องการอาหารกลางวัน?",
         need_meeting: "ต้องการจองห้องประชุม?",
+        need_microphone: "ต้องการไมค์?",
+        need_projector: "ต้องการโปรเจคเตอร์?",
+        need_interpreter: "ต้องการล่าม?",
         section_meeting: "รายละเอียดการจอง",
         meeting_date: "วันที่จองห้องประชุม",
         meeting_start: "เริ่มประชุม",
@@ -65,6 +68,9 @@ const translations = {
         need_coffee: "Need Coffee & Drinks?",
         need_lunch: "Need Lunch?",
         need_meeting: "Book Meeting Room?",
+        need_microphone: "Need Microphone?",
+        need_projector: "Need Projector?",
+        need_interpreter: "Need Interpreter?",
         section_meeting: "Booking Details",
         meeting_date: "Meeting Date",
         meeting_start: "Start Time",
@@ -448,6 +454,10 @@ function resetForm() {
     document.getElementById('lunch_check').checked = false;
     document.getElementById('meeting_room').value = '0';
     document.getElementById('meeting_room_check').checked = false;
+    document.getElementById('microphone_request').value = '1';
+    document.getElementById('microphone_request_check').checked = true;
+    document.getElementById('interpreter_request').value = '1';
+    document.getElementById('interpreter_request_check').checked = true;
     
     selectedRequiredEmailList = [];
     selectedCCEmailList = [];
@@ -476,6 +486,22 @@ function restoreSubmitButton() {
 document.addEventListener('DOMContentLoaded', function() {
     // ตั้งค่าวันที่เริ่มต้น
     setDefaultDates();
+
+    // ✅ Auto-check all toggles by default (user can turn off if not needed)
+    const autoChecks = [
+        { checkId: 'welcome_board_check',       hiddenId: 'welcome_board' },
+        { checkId: 'factory_tour_check',        hiddenId: 'factory_tour' },
+        { checkId: 'coffee_snack_check',        hiddenId: 'coffee_snack' },
+        { checkId: 'lunch_check',               hiddenId: 'lunch' },
+        { checkId: 'microphone_request_check',  hiddenId: 'microphone_request' },
+        { checkId: 'interpreter_request_check', hiddenId: 'interpreter_request' },
+        
+    ];
+    autoChecks.forEach(({ checkId, hiddenId }) => {
+        const chk = document.getElementById(checkId);
+        const hid = document.getElementById(hiddenId);
+        if (chk && hid) { chk.checked = true; hid.value = '1'; }
+    });
     
     // ตั้งค่าภาษาเริ่มต้น
     const languageToggle = document.getElementById('languageToggle');
@@ -592,6 +618,20 @@ document.addEventListener('DOMContentLoaded', function() {
         meetingRoomCheck.addEventListener('change', function() {
             document.getElementById('meeting_room').value = this.checked ? '1' : '0';
             toggleMeetingFields();
+        });
+    }
+
+    const microphoneCheck = document.getElementById('microphone_request_check');
+    if (microphoneCheck) {
+        microphoneCheck.addEventListener('change', function() {
+            document.getElementById('microphone_request').value = this.checked ? '1' : '0';
+        });
+    }
+
+    const interpreterCheck = document.getElementById('interpreter_request_check');
+    if (interpreterCheck) {
+        interpreterCheck.addEventListener('change', function() {
+            document.getElementById('interpreter_request').value = this.checked ? '1' : '0';
         });
     }
     

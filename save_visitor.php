@@ -40,6 +40,8 @@ try {
     $lunch               = isset($_POST['lunch']) ? (int)$_POST['lunch'] : 0;
     $has_meeting_room    = isset($_POST['meeting_room']) ? (int)$_POST['meeting_room'] : 0;
     $language            = $_POST['language'] ?? 'th';
+    $microphone_request  = isset($_POST['microphone_request']) ? (int)$_POST['microphone_request'] : 0;
+    $interpreter_request = isset($_POST['interpreter_request']) ? (int)$_POST['interpreter_request'] : 0;
     $meeting_date        = $has_meeting_room ? ($_POST['meeting_date'] ?? null) : null;
     $meeting_start       = $has_meeting_room ? ($_POST['meeting_start'] ?? null) : null;
     $meeting_end         = $has_meeting_room ? ($_POST['meeting_end'] ?? null) : null;
@@ -132,14 +134,16 @@ try {
         'selected_meeting_room'=> $selected_meeting_room,
         'required_recipients'  => $required_emails,
         'cc_recipients'        => $cc_emails,
-        'language'             => $language
+        'language'             => $language,
+        'microphone_request'   => $microphone_request,
+        'interpreter_request'  => $interpreter_request,
     ];
 
     // Send Email (main)
     $email_sent = sendVisitorEmail($email_data);
 
-    // ส่งอีเมลหา IT department ถ้าเลือก Welcome Board หรือ Factory Tour
-    if ($welcome_board || $factory_tour) {
+    // ส่งอีเมลหา IT department ถ้าเลือก Welcome Board, Factory Tour หรือ Microphone
+    if ($welcome_board || $factory_tour || $microphone_request) {
         $it_result = $conn->query("SELECT email FROM email_recipients WHERE department = 'IT' AND is_active = 1");
         $it_emails = [];
         if ($it_result) {
@@ -152,8 +156,8 @@ try {
         }
     }
 
-    // ส่งอีเมลหา GA department ถ้าเลือก Coffee/Snack หรือ Lunch
-    if ($coffee_snack || $lunch) {
+    // ส่งอีเมลหา GA/TS department ถ้าเลือก Coffee/Snack, Lunch หรือ Interpreter
+    if ($coffee_snack || $lunch || $interpreter_request) {
         $ga_result = $conn->query("SELECT email FROM email_recipients WHERE department = 'GA' AND is_active = 1");
         $ga_emails = [];
         if ($ga_result) {

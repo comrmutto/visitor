@@ -15,6 +15,8 @@ use PHPMailer\PHPMailer\Exception;
 
 require_once 'meeting_room_emails.php';
 
+date_default_timezone_set('Asia/Bangkok');
+
 // คำแปลสำหรับอีเมล 2 ภาษา
 $email_translations = [
     'th' => [
@@ -33,6 +35,8 @@ $email_translations = [
         'factory_tour' => 'Factory Tour',
         'coffee_snack' => 'กาแฟ-น้ำดื่ม',
         'lunch' => 'อาหารกลางวัน',
+        'microphone_request' => 'ไมโครโฟน',
+        'interpreter_request' => 'ล่าม',
         'yes' => 'ต้องการ',
         'no' => 'ไม่ต้องการ',
         'meeting_details' => 'รายละเอียดการจองห้องประชุม',
@@ -64,6 +68,8 @@ $email_translations = [
         'factory_tour' => 'Factory Tour',
         'coffee_snack' => 'Coffee & Drinks',
         'lunch' => 'Lunch',
+        'microphone_request' => 'Microphone',
+        'interpreter_request' => 'Interpreter',
         'yes' => 'Yes',
         'no' => 'No',
         'meeting_details' => 'Meeting Room Booking Details',
@@ -292,6 +298,8 @@ function createEmailContent($visitor_data, $lang = 'th') {
     $factory_tour      = !empty($visitor_data['factory_tour']);
     $coffee_snack      = !empty($visitor_data['coffee_snack']);
     $lunch             = !empty($visitor_data['lunch']);
+    $microphone_request  = !empty($visitor_data['microphone_request']);
+    $interpreter_request = !empty($visitor_data['interpreter_request']);
     $has_meeting_room  = !empty($visitor_data['has_meeting_room']);
 
     $start_fmt = !empty($visitor_data['visit_start_datetime'])
@@ -513,6 +521,14 @@ function createEmailContent($visitor_data, $lang = 'th') {
         ? "<span class='badge-yes'>✅ {$t['yes']}</span>" 
         : "<span class='badge-no'>❌ {$t['no']}</span>";
 
+    $mic_badge = $microphone_request
+        ? "<span class='badge-yes'>✅ {$t['yes']}</span>"
+        : "<span class='badge-no'>❌ {$t['no']}</span>";
+
+    $interp_badge = $interpreter_request
+        ? "<span class='badge-yes'>✅ {$t['yes']}</span>"
+        : "<span class='badge-no'>❌ {$t['no']}</span>";
+
     // ---- Meeting room section ----
     $meeting_section = '';
     if ($has_meeting_room) {
@@ -647,6 +663,14 @@ function createEmailContent($visitor_data, $lang = 'th') {
                 <span class='info-label'>{$t['lunch']}:</span>
                 <span class='info-value'>{$lunch_badge}</span>
             </div>
+            <div class='info-row'>
+                <span class='info-label'>🎤 {$t['microphone_request']}:</span>
+                <span class='info-value'>{$mic_badge}</span>
+            </div>
+            <div class='info-row'>
+                <span class='info-label'>🗣️ {$t['interpreter_request']}:</span>
+                <span class='info-value'>{$interp_badge}</span>
+            </div>
         </div>
 
         {$meeting_section}
@@ -680,17 +704,19 @@ function sendDepartmentNotification(array $to_emails, array $visitor_data, strin
     $company_name  = htmlspecialchars($visitor_data['company_name'] ?? '');
     $visitor_name  = htmlspecialchars($visitor_data['visitor_name'] ?? '');
     $purpose       = htmlspecialchars($visitor_data['purpose'] ?? '');
-    $welcome_board = !empty($visitor_data['welcome_board']);
-    $factory_tour  = !empty($visitor_data['factory_tour']);
-    $coffee_snack  = !empty($visitor_data['coffee_snack']);
-    $lunch         = !empty($visitor_data['lunch']);
+    $welcome_board       = !empty($visitor_data['welcome_board']);
+    $factory_tour        = !empty($visitor_data['factory_tour']);
+    $coffee_snack        = !empty($visitor_data['coffee_snack']);
+    $lunch               = !empty($visitor_data['lunch']);
+    $microphone_request  = !empty($visitor_data['microphone_request']);
+    $interpreter_request = !empty($visitor_data['interpreter_request']);
 
     $start_fmt = !empty($visitor_data['visit_start_datetime'])
         ? date('d/m/Y H:i', strtotime($visitor_data['visit_start_datetime'])) : '—';
     $end_fmt   = !empty($visitor_data['visit_end_datetime'])
         ? date('d/m/Y H:i', strtotime($visitor_data['visit_end_datetime'])) : '—';
 
-    // 🌟 ส่วนที่เพิ่มใหม่: ถ้าเป็น GA ให้เพิ่มอีเมลแผนก TS เข้าไปด้วย
+    // ถ้าเป็น GA ให้เพิ่มอีเมลแผนก TS เข้าไปด้วย
     if ($dept === 'GA') {
         require_once 'config.php';
         global $conn;
@@ -701,28 +727,30 @@ function sendDepartmentNotification(array $to_emails, array $visitor_data, strin
                 while ($row = $ts_result->fetch_assoc()) {
                     $ts_email = trim($row['email']);
                     if (!empty($ts_email) && !in_array($ts_email, $to_emails)) {
-                        $to_emails[] = $ts_email; // นำอีเมล TS เพิ่มเข้าไปในกลุ่มผู้รับ
+                        $to_emails[] = $ts_email;
                     }
                 }
             }
         }
-        $dept_display = 'GA / TS'; // เปลี่ยนชื่อแสดงผล
+        $dept_display = 'GA / TS';
     } else {
         $dept_display = $dept;
     }
 
-    // 🌟 กำหนดหัวข้อตามแผนก
+    // กำหนดหัวข้อและรายการตามแผนก
     if ($dept === 'IT') {
         $dept_title = ($lang === 'th') ? 'แผนก IT — กรุณาเตรียมการ' : 'IT Dept — Please Prepare';
         $items_html = '';
-        if ($welcome_board) $items_html .= '<li>✅ Welcome Board</li>';
-        if ($factory_tour)  $items_html .= '<li>✅ Factory Tour</li>';
+        if ($welcome_board)      $items_html .= '<li>✅ 📋 ' . ($lang === 'th' ? 'Welcome Board' : 'Welcome Board') . '</li>';
+        if ($factory_tour)       $items_html .= '<li>✅ 🏭 ' . ($lang === 'th' ? 'เยี่ยมชมโรงงาน (Factory Tour)' : 'Factory Tour') . '</li>';
+        if ($microphone_request) $items_html .= '<li>✅ 🎤 ' . ($lang === 'th' ? 'ไมโครโฟน (Microphone)' : 'Microphone') . '</li>';
         $dept_color = '#1B4D8A';
-    } else { // กรณีเป็น GA / TS
-        $dept_title = ($lang === 'th') ? 'แผนก GA — กรุณาเตรียมการ' : 'GA Dept — Please Prepare';
+    } else { // GA / TS
+        $dept_title = ($lang === 'th') ? 'แผนก GA / TS — กรุณาเตรียมการ' : 'GA / TS Dept — Please Prepare';
         $items_html = '';
-        if ($coffee_snack) $items_html .= '<li>✅ ' . ($lang === 'th' ? 'กาแฟ-น้ำดื่ม (Coffee & Drinks)' : 'Coffee & Drinks') . '</li>';
-        if ($lunch)        $items_html .= '<li>✅ ' . ($lang === 'th' ? 'อาหารกลางวัน (Lunch)' : 'Lunch') . '</li>';
+        if ($coffee_snack)        $items_html .= '<li>✅ ☕ ' . ($lang === 'th' ? 'กาแฟ-น้ำดื่ม (Coffee & Drinks)' : 'Coffee & Drinks') . '</li>';
+        if ($lunch)               $items_html .= '<li>✅ 🍱 ' . ($lang === 'th' ? 'อาหารกลางวัน (Lunch)' : 'Lunch') . '</li>';
+        if ($interpreter_request) $items_html .= '<li>✅ 🗣️ ' . ($lang === 'th' ? 'ต้องการล่าม (Interpreter)' : 'Interpreter Required') . '</li>';
         $dept_color = '#0B6B4A';
     }
 

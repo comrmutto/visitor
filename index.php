@@ -168,6 +168,25 @@ if ($email_result) {
 
             <div class="form-row">
                 <div class="form-group switch-group">
+                    <label for="microphone_request" data-i18n="need_microphone">ต้องการไมค์?</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="microphone_request_check" onchange="document.getElementById('microphone_request').value = this.checked ? '1' : '0'">
+                        <label for="microphone_request_check" class="slider"></label>
+                        <input type="hidden" id="microphone_request" name="microphone_request" value="0">
+                    </div>
+                </div>
+                <div class="form-group switch-group">
+                    <label for="interpreter_request" data-i18n="need_interpreter">ต้องการล่าม?</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="interpreter_request_check" onchange="document.getElementById('interpreter_request').value = this.checked ? '1' : '0'">
+                        <label for="interpreter_request_check" class="slider"></label>
+                        <input type="hidden" id="interpreter_request" name="interpreter_request" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group switch-group">
                     <label for="meeting_room" data-i18n="need_meeting">ต้องการจองห้องประชุม?</label>
                     <div class="toggle-switch">
                         <input type="checkbox" id="meeting_room_check" onchange="document.getElementById('meeting_room').value = this.checked ? '1' : '0'; toggleMeetingFields();">
