@@ -588,10 +588,10 @@ session_start();
                     step6: "6. ประเภท",
                     step6_detail: "เลือก VIP หรือ Normal",
                     step7: "7. บริการเสริม",
-                    step7_detail: "เลือก Welcome Board / เยี่ยมชมโรงงาน",
+                    step7_detail: "เลือก Welcome Board / เยี่ยมชมโรงงาน / ไมค์โครโฟน",
                     step7_detail2: "ระบบจะส่งอีเมลแจ้งเตือน IT อัตโนมัติ",
                     step8: "8. บริการเสริม",
-                    step8_detail: "เลือก กาแฟ-น้ำดื่ม / อาหารกลางวัน",
+                    step8_detail: "เลือก กาแฟ-น้ำดื่ม / อาหารกลางวัน / ล่าม",
                     step8_detail2: "ระบบจะส่งอีเมลแจ้งเตือน GA อัตโนมัติ",
                     step9: "9. จองห้องประชุม",
                     step9_detail: "เลือก ห้องประชุม",
@@ -756,10 +756,10 @@ session_start();
                     step6: "6. Type",
                     step6_detail: "Select VIP or Normal",
                     step7: "7. Additional Services",
-                    step7_detail: "Select Welcome Board / Factory Tour",
+                    step7_detail: "Select Welcome Board / Factory Tour / Microphone",
                     step7_detail2: "System will send email notification to IT automatically",
                     step8: "8. Additional Services",
-                    step8_detail: "Select Coffee-Water / Lunch",
+                    step8_detail: "Select Coffee-Water / Lunch / Translator",
                     step8_detail2: "System will send email notification to GA automatically",
                     step9: "9. Meeting Room",
                     step9_detail: "Select Meeting Room",
@@ -1054,7 +1054,7 @@ session_start();
                     <tr>
                         <td data-i18n="step7">7. บริการเสริม</td>
                         <td>
-                            <span data-i18n="step7_detail">เลือก Welcome Board / เยี่ยมชมโรงงาน</span>
+                            <span data-i18n="step7_detail">เลือก Welcome Board / เยี่ยมชมโรงงาน / ไมค์โครโฟน</span>
                             <br>
                             <small data-i18n="step7_detail2">ระบบจะส่งอีเมลแจ้งเตือน IT อัตโนมัติ</small>
                         </td>
@@ -1063,7 +1063,7 @@ session_start();
                     <tr>
                         <td data-i18n="step8">8. บริการเสริม</td>
                         <td>
-                            <span data-i18n="step8_detail">เลือก กาแฟ-น้ำดื่ม / อาหารกลางวัน</span>
+                            <span data-i18n="step8_detail">เลือก กาแฟ-น้ำดื่ม / อาหารกลางวัน / ล่าม</span>
                             <br>
                             <small data-i18n="step8_detail2">ระบบจะส่งอีเมลแจ้งเตือน GA อัตโนมัติ</small>
                         </td>
