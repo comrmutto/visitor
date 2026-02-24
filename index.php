@@ -42,6 +42,9 @@ if ($email_result) {
     <a href="admin.php" style="background:var(--card-bg);border:1px solid var(--border-color);color:var(--accent-color);padding:8px 14px;border-radius:8px;font-size:.85rem;text-decoration:none;backdrop-filter:blur(5px);transition:all 0.3s ease;">
         <i class="fas fa-cog"></i> Admin
     </a>
+    <a href="manual.php" style="background:var(--card-bg);border:1px solid var(--border-color);color:var(--accent-color);padding:8px 14px;border-radius:8px;font-size:.85rem;text-decoration:none;backdrop-filter:blur(5px);transition:all 0.3s ease;">
+        <i class="fas fa-book"></i> Manual
+    </a>
 </div>
 <div class="container">
 <header>

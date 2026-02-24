@@ -337,6 +337,9 @@ input:checked + .slider-lang:before {
         <a href="dashboard.php" class="nav-item active">
             <i class="fas fa-chart-area"></i> <span data-i18n="menu_dashboard">Dashboard</span>
         </a>
+        <a href="manual.php" class="nav-item">
+            <i class="fas fa-book"></i> <span data-i18n="menu_manual">Manual</span>
+        </a>
         <div class="nav-section">Admin</div>
         <a href="admin.php" class="nav-item">
             <i class="fas fa-cog"></i> <span data-i18n="menu_admin">จัดการข้อมูล</span>
