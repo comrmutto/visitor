@@ -26,6 +26,7 @@ const translations = {
         need_lunch: "ต้องการอาหารกลางวัน?",
         need_meeting: "ต้องการจองห้องประชุม?",
         need_microphone: "ต้องการไมค์?",
+        need_headscarf: "ต้องการหมวก/ผ้าเย็น?",
         need_projector: "ต้องการโปรเจคเตอร์?",
         need_interpreter: "ต้องการล่าม?",
         section_meeting: "รายละเอียดการจอง",
@@ -69,6 +70,7 @@ const translations = {
         need_lunch: "Need Lunch?",
         need_meeting: "Book Meeting Room?",
         need_microphone: "Need Microphone?",
+        need_headscarf: "Need Cap/Refreshing towel?",
         need_projector: "Need Projector?",
         need_interpreter: "Need Interpreter?",
         section_meeting: "Booking Details",
@@ -458,6 +460,8 @@ function resetForm() {
     document.getElementById('microphone_request_check').checked = true;
     document.getElementById('interpreter_request').value = '1';
     document.getElementById('interpreter_request_check').checked = true;
+    document.getElementById('headscarf_request').value = '1';
+    document.getElementById('headscarf_request_check').checked = true;
     
     selectedRequiredEmailList = [];
     selectedCCEmailList = [];
@@ -495,7 +499,7 @@ document.addEventListener('DOMContentLoaded', function() {
         { checkId: 'lunch_check',               hiddenId: 'lunch' },
         { checkId: 'microphone_request_check',  hiddenId: 'microphone_request' },
         { checkId: 'interpreter_request_check', hiddenId: 'interpreter_request' },
-        
+        { checkId: 'headscarf_request_check',   hiddenId: 'headscarf_request' },
     ];
     autoChecks.forEach(({ checkId, hiddenId }) => {
         const chk = document.getElementById(checkId);

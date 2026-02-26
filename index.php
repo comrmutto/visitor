@@ -187,6 +187,17 @@ if ($email_result) {
 
             <div class="form-row">
                 <div class="form-group switch-group">
+                    <label for="headscarf_request" data-i18n="need_headscarf">ต้องการหมวก/ผ้าเย็น?</label>
+                    <div class="toggle-switch">
+                        <input type="checkbox" id="headscarf_request_check" onchange="document.getElementById('headscarf_request').value = this.checked ? '1' : '0'">
+                        <label for="headscarf_request_check" class="slider"></label>
+                        <input type="hidden" id="headscarf_request" name="headscarf_request" value="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group switch-group">
                     <label for="meeting_room" data-i18n="need_meeting">ต้องการจองห้องประชุม?</label>
                     <div class="toggle-switch">
                         <input type="checkbox" id="meeting_room_check" onchange="document.getElementById('meeting_room').value = this.checked ? '1' : '0'; toggleMeetingFields();">
