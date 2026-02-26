@@ -42,6 +42,7 @@ try {
     $language            = $_POST['language'] ?? 'th';
     $microphone_request  = isset($_POST['microphone_request']) ? (int)$_POST['microphone_request'] : 0;
     $interpreter_request = isset($_POST['interpreter_request']) ? (int)$_POST['interpreter_request'] : 0;
+    $headscarf_request   = isset($_POST['headscarf_request']) ? (int)$_POST['headscarf_request'] : 0;
     $meeting_date        = $has_meeting_room ? ($_POST['meeting_date'] ?? null) : null;
     $meeting_start       = $has_meeting_room ? ($_POST['meeting_start'] ?? null) : null;
     $meeting_end         = $has_meeting_room ? ($_POST['meeting_end'] ?? null) : null;
@@ -94,19 +95,19 @@ try {
         visit_start_datetime, visit_end_datetime, visit_period,
         visitor_type, welcome_board, factory_tour, coffee_snack, lunch, has_meeting_room,
         meeting_date, meeting_start, meeting_end, selected_meeting_room, 
-        required_recipients, cc_recipients
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        required_recipients, cc_recipients, headscarf_request
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) throw new Exception('Prepare failed: ' . $conn->error);
 
     $stmt->bind_param(
-        "sssssssiiiiissssss",
+        "sssssssiiiiissssssi",
         $company_name, $visitor_name, $purpose,
         $visit_start_datetime, $visit_end_datetime, $visit_period,
         $visitor_type, $welcome_board, $factory_tour, $coffee_snack, $lunch, $has_meeting_room,
         $meeting_date, $meeting_start, $meeting_end, $selected_meeting_room,
-        $required_emails_str, $cc_emails_str
+        $required_emails_str, $cc_emails_str, $headscarf_request
     );
 
     if (!$stmt->execute()) throw new Exception('บันทึกข้อมูลไม่สำเร็จ: ' . $stmt->error);
@@ -137,6 +138,7 @@ try {
         'language'             => $language,
         'microphone_request'   => $microphone_request,
         'interpreter_request'  => $interpreter_request,
+        'headscarf_request'    => $headscarf_request,
     ];
 
     // Send Email (main)
@@ -156,8 +158,8 @@ try {
         }
     }
 
-    // ส่งอีเมลหา GA/TS department ถ้าเลือก Coffee/Snack, Lunch หรือ Interpreter
-    if ($coffee_snack || $lunch || $interpreter_request) {
+    // ส่งอีเมลหา GA/TS department ถ้าเลือก Coffee/Snack, Lunch, Interpreter หรือ Headscarf
+    if ($coffee_snack || $lunch || $interpreter_request || $headscarf_request) {
         $ga_result = $conn->query("SELECT email FROM email_recipients WHERE department = 'GA' AND is_active = 1");
         $ga_emails = [];
         if ($ga_result) {

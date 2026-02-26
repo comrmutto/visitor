@@ -470,9 +470,10 @@ if ($action === 'edit_visitor') {
     $factory_tour   = isset($_POST['factory_tour'])  ? 1 : 0;
     $coffee_snack   = isset($_POST['coffee_snack'])  ? 1 : 0;
     $lunch          = isset($_POST['lunch'])          ? 1 : 0;
+    $headscarf_request = isset($_POST['headscarf_request']) ? 1 : 0;
     if ($company_name && $visitor_name && $visit_start && $visit_end) {
-        $s = $conn->prepare("UPDATE visitors SET company_name=?,visitor_name=?,purpose=?,visit_start_datetime=?,visit_end_datetime=?,visitor_type=?,welcome_board=?,factory_tour=?,coffee_snack=?,lunch=? WHERE id=?");
-        $s->bind_param("ssssssiiiii", $company_name,$visitor_name,$purpose,$visit_start,$visit_end,$visitor_type,$welcome_board,$factory_tour,$coffee_snack,$lunch,$id);
+        $s = $conn->prepare("UPDATE visitors SET company_name=?,visitor_name=?,purpose=?,visit_start_datetime=?,visit_end_datetime=?,visitor_type=?,welcome_board=?,factory_tour=?,coffee_snack=?,lunch=?,headscarf_request=? WHERE id=?");
+        $s->bind_param("ssssssiiiiii", $company_name,$visitor_name,$purpose,$visit_start,$visit_end,$visitor_type,$welcome_board,$factory_tour,$coffee_snack,$lunch,$headscarf_request,$id);
         if ($s->execute()) { $msg='แก้ไขข้อมูล Visitor เรียบร้อยแล้ว'; $msg_type='success'; }
         else { $msg='เกิดข้อผิดพลาด: '.$conn->error; $msg_type='error'; }
     } else { $msg='กรุณากรอกข้อมูลให้ครบถ้วน'; $msg_type='error'; }
@@ -944,6 +945,7 @@ tbody td{padding:12px 16px;vertical-align:middle;}
                                     <span class="icon-badge <?= $v['factory_tour']?'yes':'no' ?>"><?= $v['factory_tour']?'✅':'—' ?> Tour</span>
                                     <span class="icon-badge <?= $v['coffee_snack']?'yes':'no' ?>"><?= $v['coffee_snack']?'✅':'—' ?> ☕</span>
                                     <span class="icon-badge <?= $v['lunch']?'yes':'no' ?>"><?= $v['lunch']?'✅':'—' ?> 🍱</span>
+                                    <span class="icon-badge <?= !empty($v['headscarf_request'])?'yes':'no' ?>"><?= !empty($v['headscarf_request'])?'✅':'—' ?> 🎩</span>
                                 </td>
                                 <td>
                                     <?php if($v['has_meeting_room']): ?>
@@ -1211,6 +1213,9 @@ tbody td{padding:12px 16px;vertical-align:middle;}
                         <label style="display:flex;align-items:center;gap:6px;color:var(--text);font-size:.88rem;font-weight:400;">
                             <input type="checkbox" name="lunch" id="ev_lunch" value="1"> 🍱 อาหารกลางวัน
                         </label>
+                        <label style="display:flex;align-items:center;gap:6px;color:var(--text);font-size:.88rem;font-weight:400;">
+                            <input type="checkbox" name="headscarf_request" id="ev_headscarf" value="1"> 🎩 หมวก/ผ้าเย็น
+                        </label>
                     </div>
                 </div>
             </div>
@@ -1327,6 +1332,7 @@ function openViewVisitor(d) {
     if (parseInt(d.factory_tour))  svc.push('✅ Factory Tour');
     if (parseInt(d.coffee_snack))  svc.push('✅ กาแฟ-น้ำดื่ม');
     if (parseInt(d.lunch))         svc.push('✅ อาหารกลางวัน');
+    if (parseInt(d.headscarf_request)) svc.push('✅ 🎩 หมวก/ผ้าเย็น');
     document.getElementById('vd_services').textContent = svc.length ? svc.join('  |  ') : '— ไม่มีบริการเพิ่มเติม';
 
     const meetBlock = document.getElementById('vd_meeting_block');
@@ -1359,6 +1365,7 @@ function openEditVisitor(d) {
     document.getElementById('ev_ft').checked    = parseInt(d.factory_tour)  === 1;
     document.getElementById('ev_cs').checked    = parseInt(d.coffee_snack)  === 1;
     document.getElementById('ev_lunch').checked = parseInt(d.lunch)         === 1;
+    document.getElementById('ev_headscarf').checked = parseInt(d.headscarf_request) === 1;
     openModal('modalEditVisitor');
 }
 </script>

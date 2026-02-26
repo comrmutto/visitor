@@ -507,7 +507,8 @@ input:checked + .slider-lang:before {
                                     <?php if($v['factory_tour']): ?><span class="chip-sm chip-yes"><span class="chip-icon">🏭</span> <span data-i18n="col_tour">เยี่ยมชมโรงงาน</span></span><?php endif; ?><br>
                                     <?php if($v['coffee_snack']): ?><span class="chip-sm chip-yes"><span class="chip-icon">☕</span> <span data-i18n="col_coffee">กาแฟ-น้ำดื่ม</span></span><?php endif; ?><br>
                                     <?php if($v['lunch']): ?><span class="chip-sm chip-yes"><span class="chip-icon">🍱</span> <span data-i18n="col_lunch">อาหารกลางวัน</span></span><?php endif; ?>
-                                    <?php if(!$v['welcome_board'] && !$v['factory_tour'] && !$v['coffee_snack'] && !$v['lunch']): ?><span style="color:var(--muted);font-size:.8rem;">—</span><?php endif; ?>
+                                    <?php if(!empty($v['headscarf_request'])): ?><span class="chip-sm chip-yes"><span class="chip-icon">🎩</span> <span data-i18n="col_headscarf">หมวก/ผ้าเย็น</span></span><?php endif; ?>
+                                    <?php if(!$v['welcome_board'] && !$v['factory_tour'] && !$v['coffee_snack'] && !$v['lunch'] && empty($v['headscarf_request'])): ?><span style="color:var(--muted);font-size:.8rem;">—</span><?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if($v['has_meeting_room']): ?>
@@ -561,7 +562,7 @@ const translations = {
         col_tour: "เยี่ยมชมโรงงาน",
         col_coffee: "กาแฟ-น้ำดื่ม",
         col_lunch: "อาหารกลางวัน",
-        month_1: "ม.ค.", month_2: "ก.พ.", month_3: "มี.ค.", month_4: "เม.ย.", month_5: "พ.ค.", month_6: "มิ.ย.",
+        col_headscarf: "หมวก/ผ้าเย็น",, month_2: "ก.พ.", month_3: "มี.ค.", month_4: "เม.ย.", month_5: "พ.ค.", month_6: "มิ.ย.",
         month_7: "ก.ค.", month_8: "ส.ค.", month_9: "ก.ย.", month_10: "ต.ค.", month_11: "พ.ย.", month_12: "ธ.ค.",
         month_full_1: "มกราคม", month_full_2: "กุมภาพันธ์", month_full_3: "มีนาคม", month_full_4: "เมษายน",
         month_full_5: "พฤษภาคม", month_full_6: "มิถุนายน", month_full_7: "กรกฎาคม", month_full_8: "สิงหาคม",
@@ -597,7 +598,7 @@ const translations = {
         col_tour: "Factory Tour",
         col_coffee: "Coffee & Drinks",
         col_lunch: "Lunch",
-        month_1: "Jan", month_2: "Feb", month_3: "Mar", month_4: "Apr", month_5: "May", month_6: "Jun",
+        col_headscarf: "Cap/Refreshing Towel",, month_2: "Feb", month_3: "Mar", month_4: "Apr", month_5: "May", month_6: "Jun",
         month_7: "Jul", month_8: "Aug", month_9: "Sep", month_10: "Oct", month_11: "Nov", month_12: "Dec",
         month_full_1: "January", month_full_2: "February", month_full_3: "March", month_full_4: "April",
         month_full_5: "May", month_full_6: "June", month_full_7: "July", month_full_8: "August",

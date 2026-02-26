@@ -37,6 +37,7 @@ $email_translations = [
         'lunch' => 'อาหารกลางวัน',
         'microphone_request' => 'ไมโครโฟน',
         'interpreter_request' => 'ล่าม',
+        'headscarf_request' => 'หมวก/ผ้าเย็น',
         'yes' => 'ต้องการ',
         'no' => 'ไม่ต้องการ',
         'meeting_details' => 'รายละเอียดการจองห้องประชุม',
@@ -70,6 +71,7 @@ $email_translations = [
         'lunch' => 'Lunch',
         'microphone_request' => 'Microphone',
         'interpreter_request' => 'Interpreter',
+        'headscarf_request' => 'Cap/Refreshing Towel',
         'yes' => 'Yes',
         'no' => 'No',
         'meeting_details' => 'Meeting Room Booking Details',
@@ -300,6 +302,7 @@ function createEmailContent($visitor_data, $lang = 'th') {
     $lunch             = !empty($visitor_data['lunch']);
     $microphone_request  = !empty($visitor_data['microphone_request']);
     $interpreter_request = !empty($visitor_data['interpreter_request']);
+    $headscarf_request   = !empty($visitor_data['headscarf_request']);
     $has_meeting_room  = !empty($visitor_data['has_meeting_room']);
 
     $start_fmt = !empty($visitor_data['visit_start_datetime'])
@@ -529,6 +532,10 @@ function createEmailContent($visitor_data, $lang = 'th') {
         ? "<span class='badge-yes'>✅ {$t['yes']}</span>"
         : "<span class='badge-no'>❌ {$t['no']}</span>";
 
+    $headscarf_badge = $headscarf_request
+        ? "<span class='badge-yes'>✅ {$t['yes']}</span>"
+        : "<span class='badge-no'>❌ {$t['no']}</span>";
+
     // ---- Meeting room section ----
     $meeting_section = '';
     if ($has_meeting_room) {
@@ -671,6 +678,10 @@ function createEmailContent($visitor_data, $lang = 'th') {
                 <span class='info-label'>🗣️ {$t['interpreter_request']}:</span>
                 <span class='info-value'>{$interp_badge}</span>
             </div>
+            <div class='info-row'>
+                <span class='info-label'>🎩 {$t['headscarf_request']}:</span>
+                <span class='info-value'>{$headscarf_badge}</span>
+            </div>
         </div>
 
         {$meeting_section}
@@ -710,6 +721,7 @@ function sendDepartmentNotification(array $to_emails, array $visitor_data, strin
     $lunch               = !empty($visitor_data['lunch']);
     $microphone_request  = !empty($visitor_data['microphone_request']);
     $interpreter_request = !empty($visitor_data['interpreter_request']);
+    $headscarf_request   = !empty($visitor_data['headscarf_request']);
 
     $start_fmt = !empty($visitor_data['visit_start_datetime'])
         ? date('d/m/Y H:i', strtotime($visitor_data['visit_start_datetime'])) : '—';
@@ -751,6 +763,7 @@ function sendDepartmentNotification(array $to_emails, array $visitor_data, strin
         if ($coffee_snack)        $items_html .= '<li>✅ ☕ ' . ($lang === 'th' ? 'กาแฟ-น้ำดื่ม (Coffee & Drinks)' : 'Coffee & Drinks') . '</li>';
         if ($lunch)               $items_html .= '<li>✅ 🍱 ' . ($lang === 'th' ? 'อาหารกลางวัน (Lunch)' : 'Lunch') . '</li>';
         if ($interpreter_request) $items_html .= '<li>✅ 🗣️ ' . ($lang === 'th' ? 'ต้องการล่าม (Interpreter)' : 'Interpreter Required') . '</li>';
+        if ($headscarf_request)   $items_html .= '<li>✅ 🎩 ' . ($lang === 'th' ? 'หมวก/ผ้าเย็น (Cap/Towel)' : 'Cap/Refreshing Towel') . '</li>';
         $dept_color = '#0B6B4A';
     }
 
