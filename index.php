@@ -885,5 +885,105 @@ function validateDates() {
         }
     })();
 </script>
+
+<!-- Footer Small Bar -->
+<footer class="footer-bar">
+    <div class="footer-content">
+        <div class="footer-center">
+            <span class="footer-text">© 2026 Visitor Management System Create by W.Krissada Ver.1.2.0</span>
+        </div>
+    </div>
+</footer>
+
+<style>
+/* Footer Small Bar Styles */
+.footer-bar {
+    background: var(--card-bg, rgba(30, 41, 59, 0.8));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    padding: 8px 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-center .footer-text {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 500;
+}
+
+.footer-right {
+    display: flex;
+    gap: 15px;
+}
+
+.footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.footer-link:hover {
+    color: var(--primary-color, #0ea5e9);
+    background: rgba(14, 165, 233, 0.1);
+}
+
+.footer-link i {
+    font-size: 0.7rem;
+}
+
+/* Light theme adjustments */
+[data-theme="light"] .footer-bar {
+    background: var(--card-bg, rgba(255, 255, 255, 0.9));
+    border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+}
+
+[data-theme="light"] .footer-link:hover {
+    background: rgba(2, 132, 199, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px 15px;
+    }
+    
+    .footer-right {
+        gap: 10px;
+    }
+    
+    .footer-link span {
+        display: none;
+    }
+    
+    .footer-link {
+        padding: 6px;
+        justify-content: center;
+        min-width: 36px;
+    }
+}
+</style>
+
 </body>
 </html>
