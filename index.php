@@ -574,7 +574,7 @@ function openEmailModal(target) {
 
     const modal = document.getElementById('emailPickerModal');
     const title = document.getElementById('emailModalTitle').querySelector('span');
-    title.textContent = target === 'required' ? 'เลือกผู้รับอีเมล' : 'เลือกอีเมลผู้รับสำเนา (CC)';
+    title.textContent = target === 'required' ? 'Select Required Recipients' : 'Select CC Recipients';
     document.getElementById('modalSearchInput').value = '';
 
     modal.classList.add('is-open');
@@ -611,6 +611,15 @@ function renderModalList(query) {
         !q || (r.name||'').toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q) ||
         (r.department && r.department.toLowerCase().includes(q))
     );
+
+    // Sort by department, then by name
+    items.sort((a, b) => {
+        const deptA = a.department || 'ZZZ'; // Put items without department at the end
+        const deptB = b.department || 'ZZZ';
+        const deptCompare = deptA.localeCompare(deptB);
+        if (deptCompare !== 0) return deptCompare;
+        return (a.name || '').localeCompare(b.name || '');
+    });
 
     if (!items.length) {
         list.innerHTML = '<div class="email-modal-empty"><i class="fas fa-search" style="font-size:2rem;display:block;margin-bottom:10px;opacity:.4;"></i>ไม่พบรายชื่อที่ค้นหา</div>';
