@@ -249,13 +249,15 @@ window.selectRequiredEmail = function(email, name, department) {
     
     const selectedEmails = document.getElementById('selectedRequiredEmails');
     const selectedTag = document.createElement('div');
-    selectedTag.className = 'selected-email-tag required-tag';
     selectedTag.id = `req_tag_${email.replace(/[@.]/g, '_')}`;
+    
+    // Create department tag class
+    const deptClass = department ? `tag-dept-${department.toLowerCase().replace(/\s+/g, '-')}` : 'tag-dept-default';
+    selectedTag.className = `selected-email-tag required-tag ${deptClass}`;
+    
     selectedTag.innerHTML = `
-        <span class="selected-email-info">
-            <span class="selected-name">${name}</span>
-            <span class="selected-email">${email}</span>
-        </span>
+        <span class="dept-name">[${department ? department.toUpperCase() : 'N/A'}]</span>
+        <span class="email-name">${name}</span>
         <span class="remove-email" onclick="removeRequiredEmail('${email}')">&times;</span>
     `;
     selectedEmails.appendChild(selectedTag);
@@ -354,13 +356,15 @@ window.selectCCEmail = function(email, name, department) {
     
     const selectedEmails = document.getElementById('selectedCCEmails');
     const selectedTag = document.createElement('div');
-    selectedTag.className = 'selected-email-tag cc-tag';
     selectedTag.id = `cc_tag_${email.replace(/[@.]/g, '_')}`;
+    
+    // Create department tag class
+    const deptClass = department ? `tag-dept-${department.toLowerCase().replace(/\s+/g, '-')}` : 'tag-dept-default';
+    selectedTag.className = `selected-email-tag cc-tag ${deptClass}`;
+    
     selectedTag.innerHTML = `
-        <span class="selected-email-info">
-            <span class="selected-name">${name}</span>
-            <span class="selected-email">${email}</span>
-        </span>
+        <span class="dept-name">[${department ? department.toUpperCase() : 'N/A'}]</span>
+        <span class="email-name">${name}</span>
         <span class="remove-email" onclick="removeCCEmail('${email}')">&times;</span>
     `;
     selectedEmails.appendChild(selectedTag);
