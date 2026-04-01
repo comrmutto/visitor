@@ -721,8 +721,8 @@ function confirmEmailSelection() {
             tag.innerHTML = `
                 <span class="dept-name">[${rec.department ? rec.department.toUpperCase() : 'N/A'}]</span>
                 <span class="email-name">${rec.name}</span>
-                <span class="remove-email" onclick="this.parentElement.remove(); removeHiddenEmail('${isRequired ? 'required_emails' : 'cc_emails'}', '${email}')">&times;</span>
-                <input type="hidden" name="${isRequired ? 'required_emails' : 'cc_emails'}[]" value="${email}">
+                <span class="remove-email" onclick="this.parentElement.remove(); removeHiddenEmail('${isRequired ? 'required_recipients' : 'cc_recipients'}', '${email}')">&times;</span>
+                <input type="hidden" name="${isRequired ? 'required_recipients' : 'cc_recipients'}[]" value="${email}">
             `;
             container.appendChild(tag);
         }

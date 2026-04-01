@@ -687,7 +687,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // ตรวจสอบว่ามีการเลือกอีเมลผู้รับอย่างน้อย 1 ท่าน
-                if (selectedRequiredEmailList.length === 0) {
+                const requiredSelectedCount = document.querySelectorAll('input[name="required_recipients[]"]').length;
+                if (requiredSelectedCount === 0) {
                     alert(t.alert_required_email);
                     return;
                 }
